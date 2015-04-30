@@ -56,6 +56,9 @@ docs/_build/
 # PyBuilder
 target/
 
+# IDE specific (pycharm)
+.idea/
+
 # project specific ignores
 *.lock
 *.out
