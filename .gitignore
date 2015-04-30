@@ -55,3 +55,9 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# project specific ignores
+*.lock
+*.out
+*.ini
+kaldefs.db

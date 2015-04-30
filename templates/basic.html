@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+    <head>
+        {% if title %}
+        <title>{{title}}</title>
+        {% else %}
+        <title>Web Portal</title>
+        {% endif %}
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+        {% block extraheadcontent %}{% endblock %}
+    </head>
+
+    <body>
+        <div class="heading">
+            {% if heading %}
+            <h1>{{heading}}</h1>
+            {% else %}
+            <h1>Web Portal</h1>
+            {% endif %}
+        </div>
+        <div class="body">
+            <div class="menu">
+                {% if menuitems %}
+                <ul>
+                {% for item in menuitems %}
+                <li>{{item}}</li>
+                {% endfor %}
+                </ul>
+                {% else %}
+                {% block menu %}{% endblock %}
+                {% endif %}
+            </div>
+            <div class="content">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+        {% block table %}
+        {% endblock %}
+    </body>
+</html>

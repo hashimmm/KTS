@@ -1,0 +1,50 @@
+{% extends "basic.html" %}
+
+{% block content %}
+    <div class = "form">
+            <form action="/add_config/" method="GET">
+                <ul class="form">
+                    <h2>Add Kaltura source</h2>
+                    <li>
+                        <label>Name: </label>
+                        <input name="KALTURA_NAME" type="text" />
+                    </li>
+                    <li>
+                        <label>Path: </label>
+                        <input name="KALTURA_PATH" type="text" />
+                    </li>
+                    <li>
+                        <label>Partner ID: </label>
+                        <input name="PARTNER_ID" type="text" />
+                    </li>
+                    <li>
+                        <label>Player ID: </label>
+                        <input name="PLAYER_ID" type="text" />
+                    </li>
+                    <li>
+                        <label>Thumbnail selector player ID: </label>
+                        <input name="THUMBNAIL_PLAYER_ID" type="text" />
+                    </li>
+                    <li>
+                        <label>Administrator secret: </label>
+                        <input name="ADMIN_SECRET" type="text" />
+                    </li>
+                    <li>
+                        <label>Secret: </label>
+                        <input name="SECRET" type="text" />
+                    </li>
+                    <li>
+                        <label>User Name (Email): </label>
+                        <input name="USER_NAME" type="text" />
+                    </li>
+                    <li>
+                        <input type="Submit" value="Add" />
+                    </li>
+                </ul>
+            </form>
+            <br /><br />
+    </div>
+    <ul>
+        <li><a href="{{url_for('kts_index')}}"> - Home - </a></li>
+    </ul>
+{% endblock %}

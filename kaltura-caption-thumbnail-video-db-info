@@ -1,0 +1,4 @@
+hashim: select * from file_sync where object_id in (select id from flavor_asset where entry_id='some_entry_id' and type=2);
+hashim: apparently 'type' is a better criteria. type=1 is for videos, type=2 is for thumbnails (or images, maybe?) and type=10053 corresponds to captions.
+
+caption type is now 10076 for kaltura v10.2 or sth.

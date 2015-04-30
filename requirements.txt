@@ -1,0 +1,7 @@
+gunicorn
+flask
+flask-login
+xlsxwriter
+python-magic
+simplejson
+chardet

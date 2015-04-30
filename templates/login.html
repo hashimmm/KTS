@@ -1,0 +1,22 @@
+{% extends "basic.html" %}
+
+{% block content %}
+    <div class = "form">
+            <form action="/auth" method="POST">
+                <ul class="form">
+                    <h2>Login</h2>
+                    <li>
+                        <label>User: </label>
+                        <input type="text" name="kts_user" />
+                    </li>
+                    <li>
+                        <label>Password: </label>
+                        <input type="password" name="kts_pass" />
+                    </li>
+                    <li>
+                        <input type="submit" value="Login" />
+                    </li>
+            </ul>
+        </form>
+    </div>
+{% endblock %}

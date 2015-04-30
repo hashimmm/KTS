@@ -1,0 +1,22 @@
+{% extends "basic.html" %}
+
+{% block content %}
+    <div class = "form">
+            <form action="/del_config/" method="GET">
+                <ul class="form">
+                    <h2>Delete Kaltura source</h2>
+                    <li>
+                        <label>Kaltura id: </label>
+                        <input type="text" name="KALTURA_CONFIG_ID" />
+                    </li>
+                    <li>
+                        <input type="submit" value="Delete" />
+                    </li>
+                </ul>
+            </form>
+            <br /><br />
+    </div>
+    <ul>
+        <li><a href="{{url_for('kts_index')}}"> - Home - </a></li>
+    </ul>
+{% endblock %}

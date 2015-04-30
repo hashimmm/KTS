@@ -1,0 +1,18 @@
+app/alpha/config/databases.yml 
+app/alpha/config/kConfLocal.php
+
+
+Yup, modifying the above two files to point to the remote db works!!!
+The only catch is, I had to mount some_network_location:/opt/kaltura5/web to
+/opt/kaltura5/web despite the local kaltura being in /opt/kaltura/
+
+This is because the path of the file is stored in the db too. 
+
+And I DID know this.
+
+I simply didn't notice that the kaltura on kal0 was running from /opt/kaltura5,
+and NOT from /opt/kaltura 
+
+Need to test all other operations too though.
+
+KMC still not loading.

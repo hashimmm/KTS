@@ -1,0 +1,88 @@
+Pause the video on the appropriate frame and click the thumbnail capture button.
+
+<script type="text/javascript" src="http://{{kaltura_local}}/p/{{partner_id}}/sp/{{partner_id}}00/embedIframeJs/uiconf_id/{{player_id}}/partner_id/{{partner_id}}">
+</script>
+
+<script type="text/javascript" src="{{url_for('static',filename='jquery.js' )}}"></script>
+
+<script> 
+function jsCallbackReady(objectId) {
+    window.kdp = document.getElementById(objectId);
+    kdp.addJsListener("playerUpdatePlayhead", "playerUpdatePlayheadHandler");
+}
+time=0;
+id=0;
+function playerUpdatePlayheadHandler(time, id) {
+    window.time = time;
+    id= id;
+}
+function customFunc1 (entryId){ 
+    kdp.sendNotification('doPause');
+                $.getJSON('{{callback}}',{
+                  entry_id : "{{entry_id}}",
+                  offset : time
+                },function(data){
+                    // e.preventDefault();  //stop the browser from following
+                    // response = data
+                    try{
+                        thumbnail_notify(data);
+                    }
+                    catch(err){
+                        if (data['success'] == true){
+                            // window.alert("Thumbnail Updated")
+                            {% if success_callback %}
+                                {% if success_callback_params %}
+                            {{success_callback}}({{success_callback_params}});
+                                {% else %}
+                            {{success_callback}}();
+                                {% endif %}
+                            {% endif %}
+                            {% if parent_host %}
+                            window.parent.postMessage("thumbnail updated", "http://{{parent_host}}");
+                            {% endif %}
+                        }
+                        else{ 
+                            //window.alert("Cannot Update Thumbnail msg = "+ msgs )
+                        }
+                    }
+                });
+} 
+</script>
+
+<object 
+    id="kaltura_player_{{cache_timestamp}}" 
+    name="kaltura_player_{{cache_timestamp}}" 
+    type="application/x-shockwave-flash"
+    allowFullScreen="true" 
+    allowNetworking="all" 
+    allowScriptAccess="always" 
+    height="330"
+    width="400"
+    bgcolor="#000000"
+    xmlns:dc="http://purl.org/dc/terms/"
+    xmlns:media="http://search.yahoo.com/searchmonkey/media/"
+    rel="media:video"
+    resource="http://{{kaltura_local}}/index.php/kwidget/cache_st/{{cache_timestamp}}/wid/_{{partner_id}}/uiconf_id/{{player_id}}/entry_id/{{entry_id}}" 
+    data="http://{{kaltura_local}}/index.php/kwidget/cache_st/{{cache_timestamp}}/wid/_{{partner_id}}/uiconf_id/{{player_id}}/entry_id/{{entry_id}}">
+
+    <param name="allowFullScreen" value="true" />
+    <param name="allowNetworking" value="all" />
+    <param name="allowScriptAccess" value="always" />
+    <param name="bgcolor" value="#000000" />
+    <param name="flashVars" value="&{FLAVOR}" />
+    <param name="movie" value="http://{{kaltura_local}}/index.php/kwidget/cache_st/{{cache_timestamp}}/wid/_{{partner_id}}/uiconf_id/{{player_id}}/entry_id/{{entry_id}}" />
+    
+    <!-- stupid kaltura ads.
+    <a href="http://corp.kaltura.com">video platform</a> 
+    <a href="http://corp.kaltura.com/video_platform/video_management">video management</a> 
+    <a href="http://corp.kaltura.com/solutions/video_solution">video solutions</a> 
+    <a href="http://corp.kaltura.com/video_platform/video_publishing">video player</a> -->
+
+    <a rel="media:thumbnail" href="http://{{kaltura_local}}/p/{{partner_id}}/sp/{{partner_id}}00/thumbnail/entry_id/{{entry_id}}/width/120/height/90/bgcolor/000000/type/2"></a>  
+    <span property="dc:description" content=""></span>
+    <span property="media:title" content="Sakura (cherry blossom)_mp4"></span> 
+    <span property="media:width" content="400"></span>
+    <span property="media:height" content="330"></span> 
+    <span property="media:type" content="application/x-shockwave-flash"></span> 
+</object>
+

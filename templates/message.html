@@ -1,0 +1,6 @@
+{% extends "basic.html" %}
+{% block content %}
+<div class="message">
+    {{message}}<br>{% if link %}<a href="{{link}}">{% if linktext %}{{linktext}}{% endif %}</a>{% endif %}
+</div>
+{% endblock %}

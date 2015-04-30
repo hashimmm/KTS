@@ -1,0 +1,54 @@
+{% extends "basic.html" %}
+
+{% block content %}
+    <div class = "form">
+            <form action="/update_config/" method="GET">
+                <ul class="form">
+                    <h2>Update Kaltura source</h2>
+                    <li>
+                        <label>Kaltura ID: </label>
+                        <input name="KALTURA_CONFIG_ID" type="text" value="{{kaltura_id}}" />
+                    </li>
+                    <li>
+                        <label>Name: </label>
+                        <input name="KALTURA_NAME" type="text" value="{{settings['KALTURA_NAME']}}" />
+                    </li>
+                    <li>
+                        <label>Path: </label>
+                        <input name="KALTURA_PATH" type="text" value="{{settings['KALTURA_PATH']}}" />
+                    </li>
+                    <li>
+                        <label>Partner ID: </label>
+                        <input name="PARTNER_ID" type="text" value="{{settings['PARTNER_ID']}}" />
+                    </li>
+                    <li>
+                        <label>Player ID: </label>
+                        <input name="PLAYER_ID" type="text" value="{{settings['PLAYER_ID']}}" />
+                    </li>
+                    <li>
+                        <label>Thumbnail selector player ID: </label>
+                        <input name="THUMBNAIL_PLAYER_ID" type="text" value="{{settings['THUMBNAIL_PLAYER_ID']}}" />
+                    </li>
+                    <li>
+                        <label>Administrator secret: </label>
+                        <input name="ADMIN_SECRET" type="text" value="{{settings['ADMIN_SECRET']}}" />
+                    </li>
+                    <li>
+                        <label>Secret: </label>
+                        <input name="SECRET" type="text" value="{{settings['SECRET']}}" />
+                    </li>
+                    <li>
+                        <label>User Name (Email): </label>
+                        <input name="USER_NAME" type="text" value="{{settings['USER_NAME']}}" />
+                    </li>
+                    <li>
+                        <input type="Submit" value="Update" />
+                    </li>
+                </ul>
+            </form>
+            <br /><br />
+    </div>
+    <ul>
+        <li><a href="{{url_for('kts_index')}}"> - Home - </a></li>
+    </ul>
+{% endblock %}
