@@ -886,8 +886,8 @@ def caption_list_by_entry_id():
 @app.route('/service/update_caption/', methods=['GET', 'POST', 'OPTIONS'])
 @utils.crossdomain(origin='*')
 def update_caption_details():
-    if True:
-    # try:
+    # if True:
+    try:
         kaltura_id, entry_id = parseIds(request.args, request.form)
         if not entry_id:
             raise Exception('entry_id is required')
@@ -907,9 +907,9 @@ def update_caption_details():
                                                default=default,
                                                name=name,
                                                client=client))
-    # except:
-    # return simplejson.dumps({'success':False ,
-    # 'messages':repr(sys.exc_info())})
+    except:
+        return simplejson.dumps({'success': False,
+                                'messages': repr(sys.exc_info())})
 
 if __name__ == '__main__':
     app.debug = True
