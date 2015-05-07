@@ -648,13 +648,16 @@ def get_entry(media_id, kaltura_id, client=None, width=120, height=120):
         req = urllib2.Request(url, data)
         content = urllib2.urlopen(req).read()
         entryData['ks'] = client.getKs()
-        thumb_ids = re.findall("<id>(.+)</id>", content)
-        thumb_id = thumb_ids[0] if thumb_ids else None
+        contentxml = ET.fromstring(content)
+        thumb_id = ''
+        for item in contentxml.findall('./result/objects/item'):
+            tags = item.find('tags').text
+            if tags and 'default_thumb' in tags:
+                thumb_id = item.find('id').text
         thumbnail_url = "%s/p/%s/thumbnail/entry_id/%s" % (
             settings['SERVICE_URL'], settings['PARTNER_ID'], media_id)
         entryData['thumbnail_url'] = thumbnail_url + \
             "/width/%s/height/%s?%s" % (width, height, int(time.time()) )
-        entryData['content'] = repr(content)
         entryData['download_url'] = entry.getDownloadUrl()
         entryData['thumb_id'] = thumb_id
         # ViewData
