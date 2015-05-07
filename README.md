@@ -4,7 +4,11 @@ KTS
 KTS is an HTTP API that abstracts out the complexity of Kaltura's own API
  when dealing with common use cases such as getting an embeddable player for
  an entry id, getting metadata for a given entry id, CRUD for thumbnails and 
- captions, and a few more things.
+ captions, uploading media from file or uploading media from a URL.
+
+It includes helpful default behavior like auto-detecting media type during
+ upload, auto-detecting caption type during upload, and even optionally
+ auto-detecting caption language.
 
 
 ## Quickstart #
@@ -15,7 +19,7 @@ To run, `python server.py`.
 `app` in server.py is a WSGI application, so any server that can work
   with WSGI applications will work with this too.
  For example, this may be started via gunicorn:
- `gunicorn --access-logfile='kts_access.log' --error-logfile='kts_error.log' -b 0.0.0.0:5000 server:app`
+ `gunicorn --access-logfile='kts_access.log' --error-logfile='kts_error.log' -b 0.0.0.0:6500 server:app`
 
 To configure KTS to work with your Kaltura account/server, you'll need to
  provide KTS with your Kaltura account integration settings. This can be done
@@ -26,7 +30,7 @@ To configure KTS to work with your Kaltura account/server, you'll need to
 Also set the environment variable `UPLOAD_FOLDER` to a valid location before
  starting.
 
-- Open up /login (eg. 127.0.0.1:5000/login) and log in with the username
+- Open up /login (eg. 127.0.0.1:6500/login) and log in with the username
    and password.
 - Go to Manage Configurations > Add new Kaltura instance
 - Enter any relevant name, the path to your Kaltura server (www.kaltura.com
@@ -44,94 +48,144 @@ Also set the environment variable `UPLOAD_FOLDER` to a valid location before
   
 That's it; with this done, you can use the KTS API to work with Kaltura.
 
+### API #
 
-## API #
+*Usage notes*:
 
-### Usage #
+- For API calls that require an entry id, specify it as `kaltura_id:entry_id` as a
+   form parameter or url query parameter called `id` where `kaltura_id` is the integer
+   ID of the kaltura instance at `http://your_kts_server:port/view_configs/`.
+- For API calls that refer only to the kaltura server but do not require an entry id
+   (eg. uploading a file, or updating caption/thumbnail in which case the caption or
+   thumbnail id is required), specify the kaltura id as `kaltura_id` in a form parameter
+   or url query parameter.
+- POST API calls that were made to perform some action (upload file,
+   thumbnail/caption CRUD) will return JSON with a field named "success"
+   to indicate success.
 
-Any API call pertaining to particular entries will accept "entry\_id" as
- a URL query parameter. It will also accept it as a form parameter for
- POST requests.
+**Upload via url**  
+```
+$ curl -X POST -F "pullPath=http://upload.wikimedia.org/wikipedia/commons/5/5b/Image_placeholder_upright.png" "http://localhost:6500/service/upload_file?medianame=arbitrary_image&kaltura_id=1"
+```  
+```
+{"kaltura_id": "0_s4cdprj6", "messages": ["Kaltura will now pull and process the video"], "success": true}
+```  
 
-If multiple Kalturas have been defined, a "kaltura_id" may be specified
- in the same way as "entry\_id". Not specifying a "kaltura\_id" will always
- default to id 1.
+**Upload file**  
+```
+$ curl -X POST -F file=@something.3gp "http://localhost:6500/service/upload_file?medianame=arbitrary_video&kaltura_id=1"
+```  
+```
+{"kaltura_id": "0_6516k95g", "messages": ["File Uploaded locally", "Uploaded to Kaltura"], "success": true}
+```  
 
-POST API calls that were made to perform some action (upload file,
- thumbnail/caption CRUD) will return JSON with a field named "success"
- to indicate success.
+**Get embeddable player**  
+```
+$ curl "http://localhost:6500/service/get_player/?id=1:0_mebfxjnh"
+```  
+(returns html)
 
+**Get embeddable thumbnail selector player**  
+```
+$ curl "http://localhost:6500/service/get_thumbnail_player/?id=1:0_mebfxjnh"
+```  
+(returns html)
 
-### Endpoints #
+**Get media metadata**  
+```
+$ curl "http://localhost:6500/service/get_media/?id=1:0_mebfxjnh"
+```  
+```
+{"startDate": null, "endDate": null, "rank": [0.0, 0], "height": 144, "duration": 25, "plays": 0, "tags": "", "download_url": "http://media2.stage.artstor.org/p/99/sp/9900/raw/entry_id/0_mebfxjnh/version/0", "width": 176, "media_type": "VIDEO", "updated": 1430991226, "searchtext": "  something ", "description": "", "views": 0, "thumb_id": "0_j0k95rmz", "name": "something", "success": true, "created": 1422339281, "url": "http://media2.stage.artstor.org/p/99/sp/9900/flvclipper/entry_id/0_mebfxjnh/version/0", "ks": "ZDY4MzM3ZmIwYmRhNmYwNGJhZTQzNmE5MWI0MDNiZmM4ZjIxNDAxNHw5OTs5OTsxNDMxMDgwNTIwOzI7MTQzMDk5NDEyMC40O2l0YWxhYXRAYWNpdC5jb207Ozs=", "thumbnail_url_old": "http://media2.stage.artstor.org/p/99/sp/9900/thumbnail/entry_id/0_mebfxjnh/version/100001", "thumbnail_url": "http://media2.stage.artstor.org/p/99/thumbnail/entry_id/0_mebfxjnh/width/120/height/120?1430994122"}
+```  
 
-- `/service/upload_file`  
-   Upload any file. (via file post or from URL)  
-   POST a file with its form parameter named "file". KTS will
-    attempt to autodetect the media type.  
-   Alternatively, provide a form or URL query parameter named "pullPath" and 
-    KTS will communicate with Kaltura to obtain the media at the given URL.
-    Media type can be either autodetected, or indicated as the "mediatype" 
-    parameter -- image, video or audio. Defaults to video on failed autodetection.
+**Delete media**  
+```
+$ curl -X POST "http://localhost:6500/service/del_media/?id=1:0_s4cdprj6"
+```  
+```
+{"message": "MEDIA_DELETED", "success": true}
+```  
 
-- `/service/get_media/`  
-   Get metadata for given entry id. Returned as JSON. 
-   Also contains thumbnail URL. If "width" and "height" parameters are provided,
-    thumbnail URL will be constructed for specified width and height.
+**Add caption**  
+```
+$ curl -F file=@sample.srt -F id=1:0_mebfxjnh -F name=testcaption http://localhost:6500/service/add_caption/
+```  
+```
+{"messages": ["File Uploaded locally", "caption added, id: 0_c8lcdomn"], "success": true}
+```  
 
-- `/service/del_media/`  
-   Delete an entry.
+**List captions**  
+```
+$ curl -F id=1:0_mebfxjnh http://localhost:6500/service/list_captions/
+```  
+```
+[{"status": "READY", "name": "testcaption", "language": "English", "format": "srt", "default": false, "created_at": 1430990289, "url": "http://media2.stage.artstor.org/api_v3/index.php/service/caption_captionAsset/action/serve/captionAssetId/0_c8lcdomn/ks/MzNhYTgzMmRlMjE3ZThjZjE1MTFmZmNiMmFhM2UyNzc3NmYzNmU5OXw5OTs5OTsxNDMxMDc2NzI2OzA7MTQzMDk5MDMyNi4zOztkb3dubG9hZDowX21lYmZ4am5oOzs=", "id": "0_c8lcdomn"}]
+```  
 
-- `/service/get_player/`  
-   Get embeddable player for entry.
+**Set caption as default**  
+```
+$ curl -F caption_id=0_c8lcdomn -F kaltura_id=1 http://localhost:6500/service/set_caption_as_default/
+```  
+```
+{"message": ["Caption with id 0_c8lcdomnset as default"], "success": true}
+```  
 
-- `/service/get_thumbnail_player/`  
-   Get thumbnail selector player for entry. (Useful for old Kaltura servers).
+**Update caption**  
+```
+$ curl -F caption_id=0_c8lcdomn -F kaltura_id=1 -F default=true -F language=Arabic -F name=changedfortesting http://localhost:6500/service/update_caption/
+```  
+```
+{"messages": ["language is Arabic", "label (name) is changedfortesting", "default is true"], "success": true}
+```  
 
-- `/service/thumbnail_list/`  
-   Returns list of thumbnails related to entry as JSON.  
-   Returns a list of objects containing id, width, height, created\_at, default and 
-    status per object.
+**Delete caption**  
+```
+$ curl -F caption_id=0_c8lcdomn -F kaltura_id=1 http://localhost:6500/service/remove_caption/
+```  
+```
+{"message": ["Caption with id 0_c8lcdomndeleted"], "success": true}
+```  
 
-- `/service/thumbnail_set_default/`  
-   Set given thumbnail (specified by its id, provided as parameter "thumbnail\_id")
-    as default for given entry.
+**List thumbnails**  
+```
+$ curl http://localhost:6500/service/thumbnail_list/?id=1:0_mebfxjnh
+```  
+```
+[{"status": "READY", "default": true, "created_at": 1422339963, "height": 144, "width": 176, "url": "http://media2.stage.artstor.org/api_v3/index.php/service/thumbAsset/action/serve/thumbAssetId/0_v6riwr89/ks/M2E0MGZjYzE2ZTNmMGRjMDA2ZjdlNGNkNDFjNjIxMTY4ZDM3ZGVlZXw5OTs5OTsxNDMxMDc3MzEyOzA7MTQzMDk5MDkxMi4xNzs7ZG93bmxvYWQ6MF9tZWJmeGpuaDs7", "id": "0_v6riwr89", "size": 4633}]
+```  
 
-- `/service/remove_thumbnail/`  
-   Remove given thumbnail (specified by its id, provided as parameter "thumbnail\_id").
+**Add thumbnail from url**  
+```
+$ curl "http://localhost:6500/service/add_thumbnail_from_url/?id=1:0_mebfxjnh&url=http%3A//upload.wikimedia.org/wikipedia/commons/5/5b/Image_placeholder_upright.png"
+```  
+```
+{"message": ["ThumbAsset added to entry, id 0_j0k95rmz", "url http://upload.wikimedia.org/wikipedia/commons/5/5b/Image_placeholder_upright.png applied to thumbnail with id 0_j0k95rmz"], "success": true}
+```  
 
-- `/service/update_thumbnail_file`  
-   Update thumbnail for given entry by file. Provide file as form data for the 
-    parameter "file". To set the uploaded file as default as well, provide
-    the parameter "default" as a non-empty string.
+**Set thumbnail as default**  
+```
+$ curl "http://localhost:6500/service/thumbnail_set_default/?kaltura_id=1&thumbnail_id=0_j0k95rmz"
+```  
+```
+{"message": ["Thumbnail with id 0_j0k95rmz set as default"], "success": true}
+```  
 
-- `/service/add_thumbnail_from_url/`  
-   Add a thumbnail for given entry from URL specified as the "url" parameter.
+**Add thumbnail from file**  
+```
+$ curl -F file=@irt.PNG http://localhost:6500/service/update_thumbnail_file?id=1:0_mebfxjnh
+```  
+```
+{"messages": [], "kaltura_id": "0_qj22c05k", "success": true}
+```  
 
-- `/service/update_thumbnail_from_player`  
-   Update thumbnail for videos by providing an offset. Also used internally by 
-    the thumbnail selector player.  
-   Given an entry id, and a query parameter "offset" in seconds, sets the
-    thumbnail for the video to the frame at given time (offset).
-
-- `/service/list_captions/`  
-   Returns list of captions related to entry as JSON.  
-   Returns a list of objects containing id, language, created\_at, default, 
-    name, format and status.
-
-- `/service/add_caption/`  
-   Add caption for given entry by file. Provide file as form data for the 
-    parameter "file". To set the uploaded file as default as well, provide
-    the parameter "default" as a non-empty string. KTS will attempt to
-    auto-detect caption format. Also, specify language as the parameter 
-    "language", eg. English. May be specified as "auto" to attempt language 
-    auto-detection.
-
-- `/service/remove_caption/`  
-   Remove given caption (specified by its id, provided as parameter "caption\_id").
-
-- `/service/set_caption_as_default/`  
-   Set given caption (specified by its id, provided as parameter "caption\_id")
-    as default for given entry.
+**Delete thumbnail**  
+```
+$ curl "http://localhost:6500/service/remove_thumbnail/?kaltura_id=1&thumbnail_id=0_qj22c05k"
+```  
+```
+{"message": ["Thumbnail with id 0_qj22c05k deleted"], "success": true}
+```  
 
 
 ## In progress #
