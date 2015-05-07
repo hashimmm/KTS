@@ -889,8 +889,6 @@ def update_caption_details():
     # if True:
     try:
         kaltura_id, entry_id = parseIds(request.args, request.form)
-        if not entry_id:
-            raise Exception('entry_id is required')
         client = kaltura_session_loader(kaltura_id)
         caption_id = request.args.get('caption_id', None) or \
             request.form.get('caption_id', None)
@@ -913,8 +911,9 @@ def update_caption_details():
 
 if __name__ == '__main__':
     app.debug = True
-    print "Starting with kaltura settings"
-    print repr(properties.load_kaltura_settings())
+    from pprint import pprint
     print "Starting with server settings"
-    print repr(SETTINGS)
+    pprint(SETTINGS)
+    print "Starting with kaltura settings"
+    pprint(properties.load_kaltura_settings())
     app.run(host='0.0.0.0', port=int(SETTINGS['PORT']))

@@ -1,7 +1,8 @@
 import os
 import sqlite3
-import csv
 import simplejson
+from pprint import pprint
+
 
 try:
     import fcntl
@@ -165,7 +166,7 @@ def rem_kaltura(kaltura_id):
         cur = kaldefsdb.cursor()
 
         cur.execute("delete from configurations where KALTURA_CONFIG_ID = ?", (kaltura_id,))
-        
+
         kaldefsdb.commit()
         cur.close()
         kaldefsdb.close()
@@ -183,7 +184,7 @@ def update_kaltura(kaltura_id, values):
         kaldefsdb = sqlite3.connect(kaldefsfile)
         cur = kaldefsdb.cursor()
 
-        upd_query = """update configurations set 
+        upd_query = """update configurations set
                             KALTURA_NAME = ?,
                             KALTURA_PATH = ?,
                             PARTNER_ID = ?,
@@ -195,7 +196,7 @@ def update_kaltura(kaltura_id, values):
                             WHERE KALTURA_CONFIG_ID = ?"""
 
         cur.execute(upd_query, (values + [kaltura_id]))
-        
+
         kaldefsdb.commit()
         cur.close()
         kaldefsdb.close()
@@ -209,18 +210,19 @@ def load_server_settings(SETTINGS={}):
     SETTINGS['PORT'] = os.environ.get('PORT', DEFAULT_PORT)
     SETTINGS['UPLOAD_FOLDER'] = os.environ.get(
         'UPLOAD_FOLDER', DEFAULT_UPLOAD_FOLDER)
-    SETTINGS['KTS_ADMIN_USER'] = os.environ.get('KTS_ADMIN_USER', 
+    SETTINGS['KTS_ADMIN_USER'] = os.environ.get('KTS_ADMIN_USER',
         DEFAULT_KTS_ADMIN_USER)
-    SETTINGS['KTS_ADMIN_PWD'] = os.environ.get('KTS_ADMIN_PWD', 
+    SETTINGS['KTS_ADMIN_PWD'] = os.environ.get('KTS_ADMIN_PWD',
         DEFAULT_KTS_ADMIN_PWD)
-    SETTINGS['KALTURA_DEFINITIONS_DB'] = os.environ.get('KALTURA_DEFINITIONS_DB', 
+    SETTINGS['KALTURA_DEFINITIONS_DB'] = os.environ.get('KALTURA_DEFINITIONS_DB',
         DEFAULT_KALTURA_DEFINITIONS_DB)
     return SETTINGS
 
 if __name__ == "__main__":
+    print 'KTS server settings: '
+    settings = load_server_settings()
+    pprint(settings)
+    print ''
     print 'Kaltura definitions: '
     kaldefs = load_kaltura_settings()
-    print kaldefs
-    print 'KTS settings: '
-    settings = load_server_settings()
-    print settings
+    pprint(kaldefs)
