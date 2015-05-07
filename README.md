@@ -187,15 +187,8 @@ $ curl "http://localhost:6500/service/remove_thumbnail/?kaltura_id=1&thumbnail_i
 {"message": ["Thumbnail with id 0_qj22c05k deleted"], "success": true}
 ```  
 
-
-## In progress #
-- All player endpoints will be modified to accept flavor ids. Otherwise eg.
-   the mobileplayer url endpoint is of somewhat limited use.
-- API autodocs as well as a /help endpoint to obtain API docs.
-- Replace deprecated API calls with newer versions.
-- Searching
-- Allowing user to specify filters/sort ordering in things like thumbnail list 
-   instead of using unspecified defaults.
+## TODO/Further work #
+Check the roadmap in the wiki.
 
 
 ## Acknowledgments #
