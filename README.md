@@ -62,13 +62,14 @@ That's it; with this done, you can use the KTS API to work with Kaltura.
 - POST API calls that were made to perform some action (upload file,
    thumbnail/caption CRUD) will return JSON with a field named "success"
    to indicate success.
+- In responses, the "kaltura_id" field is a misnomer and is deprecated.
 
 **Upload via url**  
 ```
 $ curl -X POST -F "pullPath=http://upload.wikimedia.org/wikipedia/commons/5/5b/Image_placeholder_upright.png" "http://localhost:6500/service/upload_file?medianame=arbitrary_image&kaltura_id=1"
 ```  
 ```
-{"kaltura_id": "0_s4cdprj6", "messages": ["Kaltura will now pull and process the video"], "success": true}
+{"kaltura_id": "0_s4cdprj6", "entry_id": "0_s4cdprj6", "messages": ["Kaltura will now pull and process the video"], "success": true}
 ```  
 
 **Upload file**  
@@ -76,7 +77,7 @@ $ curl -X POST -F "pullPath=http://upload.wikimedia.org/wikipedia/commons/5/5b/I
 $ curl -X POST -F file=@something.3gp "http://localhost:6500/service/upload_file?medianame=arbitrary_video&kaltura_id=1"
 ```  
 ```
-{"kaltura_id": "0_6516k95g", "messages": ["File Uploaded locally", "Uploaded to Kaltura"], "success": true}
+{"kaltura_id": "0_6516k95g", "entry_id": "0_6516k95g", "messages": ["File Uploaded locally", "Uploaded to Kaltura"], "success": true}
 ```  
 
 **Get embeddable player**  
@@ -112,7 +113,7 @@ $ curl -X POST "http://localhost:6500/service/del_media/?id=1:0_s4cdprj6"
 $ curl -F file=@sample.srt -F id=1:0_mebfxjnh -F name=testcaption http://localhost:6500/service/add_caption/
 ```  
 ```
-{"messages": ["File Uploaded locally", "caption added, id: 0_c8lcdomn"], "success": true}
+{"messages": ["File Uploaded locally", "caption added, id: 0_c8lcdomn"], "success": true, "caption_id": "0_c8lcdomn"}
 ```  
 
 **List captions**  
@@ -176,7 +177,7 @@ $ curl "http://localhost:6500/service/thumbnail_set_default/?kaltura_id=1&thumbn
 $ curl -F file=@irt.PNG http://localhost:6500/service/update_thumbnail_file?id=1:0_mebfxjnh
 ```  
 ```
-{"messages": [], "kaltura_id": "0_qj22c05k", "success": true}
+{"messages": [], "kaltura_id": "0_qj22c05k", "thumbnail_id": "0_qj22c05k", "success": true}
 ```  
 
 **Delete thumbnail**  

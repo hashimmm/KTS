@@ -417,7 +417,7 @@ def thumbnail_delete(client, thumbnail_id):
                              'error': 'thumbnail is default'}
         else:
             msgs.append('Deletion failed for thumbnail with ID %s' % thumbnail_id)
-            msgs.append('Exception: ' + str(e))
+            msgs.append('Exception: ' + str(ke))
             returncontent = {'success': False, 'message': msgs}
     except Exception as e:
         msgs.append('Deletion failed for thumbnail with ID %s' % thumbnail_id)

@@ -328,6 +328,11 @@ def get_excel():
 
 @app.route('/service/upload_file', methods=['GET', 'POST'])
 def upload_file_service():
+    """Upload a file to kaltura (via remote URL or file POST).
+
+    Returns a JSON object containing "success", "kaltura_id" (misnomer,
+    deprecated), "messages" and "entry_id".
+    """
     msgs = []
     try:
     # if True:
@@ -374,11 +379,12 @@ def upload_file_service():
                 if upload_status:
                     return simplejson.dumps({
                         'success': True,
-                        'messages': msgs, 'kaltura_id': upload_info})
+                        'messages': msgs, 'kaltura_id': upload_info,
+                        'entry_id': upload_info})
                 else:
                     return simplejson.dumps({
                         'success': False, 'messages': msgs,
-                        'kaltura_id': upload_info})
+                        'kaltura_id': upload_info, 'entry_id': upload_info})
             elif pull_path:
                 # Must Instruct Kaltura to pull from this path
                 # and also supply media name
@@ -403,11 +409,12 @@ def upload_file_service():
                 if upload_status:
                     return simplejson.dumps({
                         'success': True,
-                        'messages': msgs, 'kaltura_id': upload_info})
+                        'messages': msgs, 'kaltura_id': upload_info,
+                        'entry_id': upload_info})
                 else:
                     return simplejson.dumps({
                         'success': False, 'messages': msgs,
-                        'kaltura_id': upload_info})
+                        'kaltura_id': upload_info, 'entry_id': upload_info})
             else:
                 inputfile = request.files['file']
                 if inputfile and allowed_file(inputfile.filename):
@@ -427,12 +434,12 @@ def upload_file_service():
                         return simplejson.dumps({
                             'success': True,
                             'messages': msgs,
-                            'kaltura_id': upload_info})
+                            'kaltura_id': upload_info, 'entry_id': upload_info})
                     else:
                         return simplejson.dumps({
                             'success': False,
                             'messages': msgs,
-                            'kaltura_id': upload_info})
+                            'kaltura_id': upload_info, 'entry_id': upload_info})
         return simplejson.dumps({
             'success': False,
             'errorValue': 'Data not Posted', 'messages': msgs})
@@ -509,6 +516,11 @@ def remove_thumbnail():
 
 @app.route('/service/update_thumbnail_file', methods=['GET', 'POST'])
 def update_thumbnail():
+    """Update thumbnail via file POST.
+
+    Returns a JSON object containing "success", "kaltura_id" (misnomer,
+    deprecated), "messages" and "thumbnail_id".
+    """
     try:
         kaltura_id, entry_id = parseIds(request.args, request.form)
         client = kaltura_session_loader(kaltura_id)
@@ -530,12 +542,14 @@ def update_thumbnail():
             if upload_status:
                 return simplejson.dumps({'success': True,
                                          'kaltura_id': upload_info,
-                                         'messages': msgs})
+                                         'messages': msgs,
+                                         'thumbnail_id': upload_info})
             else:
                 msgs.append("Internal Server Error")
                 return simplejson.dumps({'success': False,
                                          'kaltura_id': upload_info,
-                                         'messages': msgs})
+                                         'messages': msgs,
+                                         'thumbnail_id': upload_info})
         else:
             msgs.append("file type not allowed")
             return simplejson.dumps({'success': False, 'messages': msgs})
@@ -575,17 +589,18 @@ def update_thumbnail_from_player():
             client)
         if upload_status:
             return simplejson.dumps({'success': True,
-                                     'kaltura_id': upload_info,
+                                     'thumbnail_id': upload_info,
                                      'messages': msgs})
         else:
             msgs.append("Internal Server Error")
             return simplejson.dumps({'success': False,
-                                     'kaltura_id': upload_info,
+                                     'thumbnail_id': upload_info,
                                      'messages': msgs})
     except:
         return simplejson.dumps({'success': False,
-                                 'kaltura_id': upload_info,
+                                 'thumbnail_id': upload_info,
                                  'messages': msgs})
+    # thumbnail_id was previously called kaltura_id
 
 
 @app.route('/service/del_media/', methods=['GET', 'POST'])
@@ -823,7 +838,8 @@ def add_caption_file():
             capformat=capformat.lower()
             )
         msgs.append('caption added, id: ' + str(caption_asset_id))
-        return simplejson.dumps({'success': True, 'messages': msgs})
+        return simplejson.dumps({'success': True, 'messages': msgs,
+                                 'caption_id': str(caption_asset_id)})
     except:
         return simplejson.dumps({'success': False,
                                  'messages': repr(sys.exc_info())})
