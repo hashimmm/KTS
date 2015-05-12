@@ -207,6 +207,44 @@ LANGUAGE_LIST = [
 ]
 
 
+kts_mobile_flavor_payload = {
+    "ks": "",
+    "clientTag": "testme",
+    "service": "flavorParams",
+    "action": "add",
+    "flavorParams:objectType": "KalturaFlavorParams",
+    "flavorParams:partnerId": "99",
+    "flavorParams:name": "kts_ipad",
+    "flavorParams:systemName": "kts_ipad",
+    "flavorParams:description": "Mobile/iPad friendly flavor added by KTS.",
+    "flavorParams:tags": "web,ipad,mobile,kts",
+    "flavorParams:videoCodec": "h264",
+    "flavorParams:videoBitrate": "1500",
+    "flavorParams:audioCodec": "aac",
+    "flavorParams:audioBitrate": "160",
+    "flavorParams:audioChannels": "2",
+    "flavorParams:audioSampleRate": "4800",
+    "flavorParams:width": "1024",
+    "flavorParams:height": "0",
+    "flavorParams:frameRate": "25",
+    "flavorParams:gopSize": "50",
+    "flavorParams:conversionEngines": "2,99",
+    "flavorParams:conversionEnginesExtraParams": "-flags +loop+mv4 -cmp 256 -partitions +parti4x4+partp8x8+partb8x8 -trellis 1 -refs 1 -me_range 16 -keyint_min 20 -sc_threshold 40 -i_qfactor 0.71 -bt 800k -maxrate 1200k -bufsize 1200k -rc_eq 'blurCplx^(1-qComp)' -level 30 -async 2  -vsync 2 | -flags +loop+mv4 -cmp 256 -partitions +parti4x4+partp8x8+partb8x8 -trellis 1 -refs 1 -me_range 16 -keyint_min 20 -sc_threshold 40 -i_qfactor 0.71 -bt 800k -maxrate 1200k -bufsize 1200k -rc_eq 'blurCplx^(1-qComp)' -level 30 -async 2 -vsync 2",
+    "flavorParams:twoPass": "0",
+    "flavorParams:deinterlice": "0",
+    "flavorParams:rotate": "0",
+    "flavorParams:operators": "",
+    "flavorParams:engineVersion": "0",
+    "flavorParams:format": "mp4",
+    "flavorParams:aspectRatioProcessingMode": "0",
+    "flavorParams:forceFrameToMultiplication16": "1",
+    "flavorParams:videoConstantBitrate": "0",
+    "flavorParams:videoBitrateTolerance": "0",
+    "flavorParams:requiredPermissions:item1:objectType": "KalturaString",
+    "flavorParams:requiredPermissions:item1:value": "FEATURE_MOBILE_FLAVORS"
+}
+
+
 def sort_by_field(l, field, ascending=True):
     sorted_values = sorted([item[field] for item in l], reverse=not ascending)
     keyed_objects = {item[field]: item for item in l}
@@ -505,6 +543,19 @@ def thumbnail_add_from_url(client, entry_id, thumburl):
         msgs.append('Failed to add thumbnail from %s to media with entry_id %s' % (entry_id, thumburl))
         msgs.append('Exception: ' + str(e))
         return {'success': False, 'message': msgs}
+
+
+def add_kts_mobile_flavor(client, kaltura_id):
+    payload = kts_mobile_flavor_payload.copy()
+    payload['ks'] = client.getKs()
+    settings = properties.load_kaltura_settings().get(kaltura_id)
+    url = "%s/api_v3/" % settings['SERVICE_URL']
+    data = urlencode(payload)
+    req = urllib2.Request(url, data)
+    response = urllib2.urlopen(req).read()
+    contentxml = ET.fromstring(response)
+    flavor_id = contentxml.find('./result/id').text
+    return flavor_id
 
 
 def searchVideos(client,

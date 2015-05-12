@@ -460,6 +460,40 @@ def get_asset_data():
                                       width, height))
 
 
+@app.route('/service/add_kts_mobile_flavor/', methods=['GET', 'POST'])
+def add_mobile_flavor_to_kts():
+    msgs = []
+    try:
+    # if True:
+        kaltura_id, entry_id = parseIds(request.args, request.form)
+        settings = properties.load_kaltura_settings().get(kaltura_id)
+        if settings['MOBILE_PLAYER_FLAVOR']:
+            msgs.append('Flavor already configured.')
+            return simplejson.dumps({'success':True,
+                                     'messages':msgs})
+        client = kaltura_session_loader(kaltura_id)
+        flavor_id = add_kts_mobile_flavor(client, kaltura_id)
+        # flavor_id = "123"
+        msgs.append("Added flavor to kaltura")
+        proplist = properties.kaltura_properties_list
+        values = [settings[item] for item in proplist if not item == 'KALTURA_CONFIG_ID']
+        values[8] = flavor_id
+        resp = simplejson.loads(properties.update_kaltura(kaltura_id, values))
+        if resp['success']:
+            msgs.append('Set flavor id as mobile player flavor in local '
+                        'configurations for kaltura id %s' % kaltura_id)
+        else:
+            msgs.append('Failed to assign flavor id in local configuration.')
+        return simplejson.dumps({
+            "flavor_id": flavor_id,
+            "success": True,
+            "messages": msgs
+        })
+    except:
+        return simplejson.dumps({'success':False,
+                                 'messages':repr(sys.exc_info())})
+
+
 @app.route('/service/thumbnail_list/', methods=['GET', 'POST', 'OPTIONS'])
 @utils.crossdomain(origin='*')
 def get_thumbnail_list():
@@ -667,11 +701,15 @@ def get_kaltura_mobileplayer_url():
     # kaltura_session_loader(session)
     #kclient = session.get("kclient", None)
     settings = properties.load_kaltura_settings().get(kaltura_id)
+    if not settings['MOBILE_PLAYER_FLAVOR']:
+        return simplejson.dumps({"success": False,
+                                 "messages": ['Flavor ID not configured!']})
     return render_template('kaltura_mobileplayer.html',
                            kaltura_local=settings['KALTURA_PATH'],
                            partner_id=settings['PARTNER_ID'],
                            player_id=settings['PLAYER_ID'],
                            entry_id=entry_id,
+                           flavor_id=settings['MOBILE_PLAYER_FLAVOR'],
                            cache_timestamp=cache_timestamp)
 
 

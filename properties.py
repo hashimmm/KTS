@@ -26,6 +26,7 @@ DEFAULT_USER_NAME = ""
 DEFAULT_SERVICE_URL = "http://127.0.0.1:%s" % DEFAULT_PORT
 DEFAULT_KTS_ADMIN_USER = 'ktsadmin'
 DEFAULT_KTS_ADMIN_PWD = 'ktsadmin'
+DEFAULT_MOBILE_PLAYER_FLAVOR = ''
 DEFAULT_KALTURA_DEFINITIONS_DB = 'kaldefs.db'
 
 kaldefsfile = os.environ.get('KALTURA_DEFINITIONS_DB', DEFAULT_KALTURA_DEFINITIONS_DB)
@@ -40,7 +41,8 @@ kaltura_defaults_dictionary = {
     "ADMIN_SECRET": "a5c1cb2c9bcd66b825db68533c3ec792",
     "SECRET": "8e81fdce8808cbf71b8dc6c8ee258842",
     "USER_NAME": "foo@example.com",
-    "KALTURA_INSTANCES": 1
+    "KALTURA_INSTANCES": 1,
+    "MOBILE_PLAYER_FLAVOR": ""
 }
 
 # the order of the follwing is important.
@@ -53,7 +55,8 @@ config_table_creation_query = """
                                  THUMBNAIL_PLAYER_ID int,
                                  ADMIN_SECRET text,
                                  SECRET text,
-                                 USER_NAME text
+                                 USER_NAME text,
+                                 MOBILE_PLAYER_FLAVOR text
                                  )
     """
 
@@ -66,7 +69,8 @@ Makes a map of id => Settings Map
 # the order of the following is important.
 kaltura_properties_list = ['KALTURA_CONFIG_ID', 'KALTURA_NAME', 'KALTURA_PATH',
                            'PARTNER_ID', 'PLAYER_ID', 'THUMBNAIL_PLAYER_ID',
-                           'ADMIN_SECRET', 'SECRET', 'USER_NAME']
+                           'ADMIN_SECRET', 'SECRET', 'USER_NAME',
+                           'MOBILE_PLAYER_FLAVOR']
 
 
 def load_kals_from_env(SETTINGS, cur):
@@ -93,7 +97,7 @@ def load_kals_from_env(SETTINGS, cur):
             values = [config_id.split("_")[1]] + \
                 [ temp_kaltura_config_map.get(kaltura_properties_list[j]) for \
                 j in xrange(1,len(kaltura_properties_list)) ]
-            cur.execute("insert into configurations values(?,?,?,?,?,?,?,?,?)", values)
+            cur.execute("insert into configurations values(?,?,?,?,?,?,?,?,?,?)", values)
     else:
         raise Exception(
                 "Kaltura Count Must be Positive, got %d" % kaltura_count
@@ -138,9 +142,9 @@ def add_kaltura(values):
         cur.execute("select count(*) from configurations")
         count = cur.fetchall()[0][0]
         if count == 0:
-            cur.execute("insert into configurations values(1,?,?,?,?,?,?,?,?)", values)
+            cur.execute("insert into configurations values(1,?,?,?,?,?,?,?,?,?)", values)
         else:
-            cur.execute("insert into configurations values(NULL,?,?,?,?,?,?,?,?)", values)
+            cur.execute("insert into configurations values(NULL,?,?,?,?,?,?,?,?,?)", values)
 
         kaldefsdb.commit()
         kaltura_id = cur.lastrowid
@@ -192,10 +196,11 @@ def update_kaltura(kaltura_id, values):
                             THUMBNAIL_PLAYER_ID = ?,
                             ADMIN_SECRET = ?,
                             SECRET = ?,
-                            USER_NAME = ?
+                            USER_NAME = ?,
+                            MOBILE_PLAYER_FLAVOR = ?
                             WHERE KALTURA_CONFIG_ID = ?"""
 
-        cur.execute(upd_query, (values + [kaltura_id]))
+        cur.execute(upd_query, (list(values) + [kaltura_id]))
 
         kaldefsdb.commit()
         cur.close()
