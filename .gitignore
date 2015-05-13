@@ -62,5 +62,4 @@ target/
 # project specific ignores
 *.lock
 *.out
-*.ini
-kaldefs.db
+kaldefs.db*

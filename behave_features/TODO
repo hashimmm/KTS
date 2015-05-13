@@ -1,0 +1,5 @@
+# TODO: #
+- Thumbnail, caption tests can be split into multiple scenarios, decide.
+- Test for kaltura id and entry id parsing
+- Test for reading parameters from both form params and url params
+- The above can have unit tests instead, decide.

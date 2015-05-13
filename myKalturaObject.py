@@ -299,6 +299,7 @@ def GetConfig(settings):
     config = KalturaConfiguration(partner_id)
     config.serviceUrl = service_url
     config.setLogger(KalturaLogger())
+    config.requestTimeout = 60
     return config
 
 
@@ -381,6 +382,7 @@ def uploadVideo(file_path,
                 client=None,
                 media_type=None):
     try:
+    # if True:
         # create session
         if client is None:
             raise Exception("Client can not be None")
@@ -400,9 +402,9 @@ def uploadVideo(file_path,
         mediaEntry = client.media.addFromUploadedFile(
             mediaEntry, uploadTokenId)
         return (True, mediaEntry.id)
-    except:
+    except Exception as e:
         return (False,
-                "Unexpected error:" + "<p>" + repr(sys.exc_info()) + "</p>")
+                "Unexpected error:" + "<p>" + str(e) + "</p>")
 
 
 def updateThumbnail(file_path, entry_id, client=None, set_default=False):
