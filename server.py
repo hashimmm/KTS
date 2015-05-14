@@ -475,6 +475,8 @@ def add_mobile_flavor_to_kts():
         flavor_id = add_kts_mobile_flavor(client, kaltura_id)
         # flavor_id = "123"
         msgs.append("Added flavor to kaltura")
+        add_flavor_to_default_conversion_profile(client, flavor_id, kaltura_id)
+        msgs.append("Added flavor to default conversion profile")
         proplist = properties.kaltura_properties_list
         values = [settings[item] for item in proplist if not item == 'KALTURA_CONFIG_ID']
         values[8] = flavor_id
@@ -491,7 +493,7 @@ def add_mobile_flavor_to_kts():
         })
     except:
         return simplejson.dumps({'success':False,
-                                 'messages':repr(sys.exc_info())})
+                                 'messages':msgs.append(repr(sys.exc_info()))})
 
 
 @app.route('/service/thumbnail_list/', methods=['GET', 'POST', 'OPTIONS'])

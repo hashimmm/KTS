@@ -560,6 +560,24 @@ def add_kts_mobile_flavor(client, kaltura_id):
     return flavor_id
 
 
+def add_flavor_to_default_conversion_profile(client, flavor_id, kaltura_id):
+    def_cp = client.conversionProfile.getDefault()
+    settings = properties.load_kaltura_settings().get(kaltura_id)
+    cp_id = def_cp.id
+    cp_flavorParamsIds = def_cp.flavorParamsIds + u',{}'.format(flavor_id)
+    url = "{}/api_v3/?service=conversionProfile&action=update".format(
+        settings['SERVICE_URL'])
+    payload = {}
+    payload['ks'] = client.getKs()
+    payload['id'] = cp_id
+    payload['conversionProfile:flavorParamsIds'] = cp_flavorParamsIds
+    data = urlencode(payload)
+    req = urllib2.Request(url, data)
+    response = urllib2.urlopen(req).read()
+    if "<error>" in response:
+        raise Exception(response)
+
+
 def searchVideos(client,
                 kaltura_id=None,
                 composite=False,
