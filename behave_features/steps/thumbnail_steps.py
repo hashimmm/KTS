@@ -17,6 +17,7 @@ def thumbnail_update(thumbnail_file_and_name, entry_id, kid, app):
 
 @given(u'a thumbnail file at path {path}')
 def given_thumbnail_file(context, path):
+    context.thumbnal_path = path
     context.thumbnail_file = open(path, 'rb')
     context.thumbnail_file_name = os.path.basename(path)
 
@@ -24,6 +25,12 @@ def given_thumbnail_file(context, path):
 @when(u'this thumbnail file is applied to file')
 def update_thumbnail_for_entry(context):
     context.thumbnail_id = thumbnail_update(
+        (context.thumbnail_file, context.thumbnail_file_name),
+        context.entry_id, context.kaltura_id, context.app
+    )
+    context.thumbnail_file.close()
+    context.thumbnail_file = open(context.thumbnal_path, 'rb')
+    context.deletable_thumbnail_id = thumbnail_update(
         (context.thumbnail_file, context.thumbnail_file_name),
         context.entry_id, context.kaltura_id, context.app
     )
@@ -70,11 +77,18 @@ def check_thumb_list_length(context):
 
 @then(u'thumbnail can be deleted')
 def del_thumb(context):
+    non_default_thumbs = [item['id'] for item 
+                          in context.thumbnails_list if not item['default']]
+    if not non_default_thumbs:
+        assert False, ('Thumbnail deletion untested; '
+                       'add non-default thumbnail.')
+        return
+    del_thumb_id = non_default_thumbs[0]
     failure = False
     try:
         r = context.app.get('/service/remove_thumbnail/'
                             '?kaltura_id=%s&thumbnail_id=%s'
-                            % (context.kaltura_id, context.thumbnail_id))
+                            % (context.kaltura_id, del_thumb_id))
     except Exception as e:
         logging.exception(e)
         failure = True
@@ -83,5 +97,5 @@ def del_thumb(context):
     if not r_json.get('success'):
         failure = True
     if failure:
-        logging.warning('Failed to delete thumb with id %s,' % context.thumbnail_id)
+        logging.warning('Failed to delete thumb with id %s,' % del_thumb_id)
         logging.warning('Perform cleanup manually.')
