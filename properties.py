@@ -3,16 +3,16 @@ import sqlite3
 import simplejson
 from pprint import pprint
 
-
 try:
     import fcntl
-except:
-    class fcntl(object):
+except ImportError:
+    class FCNTL(object):
         LOCK_EX = None
+
         def lockf(*args, **kwargs):
             pass
-    fcntl = fcntl()
 
+    fcntl = FCNTL()
 
 DEFAULT_PORT = 6500
 DEFAULT_UPLOAD_FOLDER = ""
@@ -30,7 +30,8 @@ DEFAULT_DEBUG_MODE = ''
 DEFAULT_MOBILE_PLAYER_FLAVOR = ''
 DEFAULT_KALTURA_DEFINITIONS_DB = 'kaldefs.db'
 
-kaldefsfile = os.environ.get('KALTURA_DEFINITIONS_DB', DEFAULT_KALTURA_DEFINITIONS_DB)
+kaldefsfile = os.environ.get('KALTURA_DEFINITIONS_DB',
+                             DEFAULT_KALTURA_DEFINITIONS_DB)
 kaldefsdb = None
 
 kaltura_defaults_dictionary = {
@@ -86,33 +87,38 @@ def load_kals_from_env(SETTINGS, cur):
             for (accessor_term, accessor_accessor) in \
                     zip(kaltura_properties_list, accessors):
                 temp_kaltura_config_map[accessor_term] = os.environ.get(
-                            accessor_accessor,
-                            kaltura_defaults_dictionary.get(accessor_term)
-                            )
-            #temp_kaltura_config_map['SERVICE_URL'] = "Donkey"
+                    accessor_accessor,
+                    kaltura_defaults_dictionary.get(accessor_term)
+                )
+            # temp_kaltura_config_map['SERVICE_URL'] = "Donkey"
             temp_kaltura_config_map['SERVICE_URL'] = \
-                                "http://" + temp_kaltura_config_map.get(
-                                    'KALTURA_PATH', DEFAULT_KALTURA_PATH
-                                    )
+                "http://" + temp_kaltura_config_map.get(
+                    'KALTURA_PATH', DEFAULT_KALTURA_PATH
+                )
             SETTINGS[config_id.split("_")[1]] = temp_kaltura_config_map
             values = [config_id.split("_")[1]] + \
-                [ temp_kaltura_config_map.get(kaltura_properties_list[j]) for \
-                j in xrange(1,len(kaltura_properties_list)) ]
-            cur.execute("insert into configurations values(?,?,?,?,?,?,?,?,?,?)", values)
+                     [temp_kaltura_config_map.get(kaltura_properties_list[j])
+                      for j in xrange(1, len(kaltura_properties_list))]
+            cur.execute(
+                "insert into configurations values(?,?,?,?,?,?,?,?,?,?)",
+                values)
     else:
         raise Exception(
-                "Kaltura Count Must be Positive, got %d" % kaltura_count
-                )
+            "Kaltura Count Must be Positive, got %d" % kaltura_count
+        )
     return SETTINGS
 
+
 def load_kaltura_settings(SETTINGS=None):
-    lockfile = open('kts-config.lock','w')
+    lockfile = open('kts-config.lock', 'w')
     fcntl.lockf(lockfile, fcntl.LOCK_EX)
     if SETTINGS is None:
         SETTINGS = {}
     kaldefsdb = sqlite3.connect(kaldefsfile)
     cur = kaldefsdb.cursor()
-    cur.execute("select count(*) from sqlite_master where type='table' and name='configurations'")
+    cur.execute(
+        "select count(*) from sqlite_master "
+        "where type='table' and name='configurations'")
     existence = cur.fetchall()[0][0]
     if existence == 1:
         cur.execute("""select KALTURA_CONFIG_ID,
@@ -127,9 +133,11 @@ def load_kaltura_settings(SETTINGS=None):
                                  MOBILE_PLAYER_FLAVOR from configurations""")
         for row in cur:
             kal_id = str(row[0])
-            SETTINGS[kal_id] = { kaltura_properties_list[i]:str(row[i]) for i in xrange(1,len(row)) }
+            SETTINGS[kal_id] = {kaltura_properties_list[i]: str(row[i]) for i in
+                                xrange(1, len(row))}
             # a.k.a dict( zip( kaltura_properties_list[1:], row[1:] ) )
-            SETTINGS[kal_id]['SERVICE_URL'] = "http://" + SETTINGS[kal_id]['KALTURA_PATH']
+            SETTINGS[kal_id]['SERVICE_URL'] = "http://" + SETTINGS[kal_id][
+                'KALTURA_PATH']
 
     elif existence == 0:
         cur.execute(config_table_creation_query)
@@ -141,10 +149,11 @@ def load_kaltura_settings(SETTINGS=None):
     lockfile.close()
     return SETTINGS
 
+
 def add_kaltura(values):
     try:
-        lockfile = open('kts-config.lock','w')
-        fcntl.lockf(lockfile,fcntl.LOCK_EX)
+        lockfile = open('kts-config.lock', 'w')
+        fcntl.lockf(lockfile, fcntl.LOCK_EX)
 
         kaldefsdb = sqlite3.connect(kaldefsfile)
         cur = kaldefsdb.cursor()
@@ -152,9 +161,13 @@ def add_kaltura(values):
         cur.execute("select count(*) from configurations")
         count = cur.fetchall()[0][0]
         if count == 0:
-            cur.execute("insert into configurations values(1,?,?,?,?,?,?,?,?,?)", values)
+            cur.execute(
+                "insert into configurations values(1,?,?,?,?,?,?,?,?,?)",
+                values)
         else:
-            cur.execute("insert into configurations values(NULL,?,?,?,?,?,?,?,?,?)", values)
+            cur.execute(
+                "insert into configurations values(NULL,?,?,?,?,?,?,?,?,?)",
+                values)
 
         kaldefsdb.commit()
         kaltura_id = cur.lastrowid
@@ -162,9 +175,11 @@ def add_kaltura(values):
         kaldefsdb.close()
         lockfile.close()
 
-        return simplejson.dumps({'success':True, 'kaltura_id':kaltura_id})
+        return simplejson.dumps({'success': True, 'kaltura_id': kaltura_id})
     except Exception as e:
-        return simplejson.dumps({'success':False, 'messages':[repr(e),str(e)]})
+        return simplejson.dumps(
+            {'success': False, 'messages': [repr(e), str(e)]})
+
 
 def rem_kaltura(kaltura_id):
     try:
@@ -173,27 +188,30 @@ def rem_kaltura(kaltura_id):
         if kaltura_id is None or kaltura_id == '':
             success = False
             msgs.append('KALTURA_CONFIG_ID must be provided')
-        lockfile = open('kts-config.lock','w')
-        fcntl.lockf(lockfile,fcntl.LOCK_EX)
+        lockfile = open('kts-config.lock', 'w')
+        fcntl.lockf(lockfile, fcntl.LOCK_EX)
 
         kaldefsdb = sqlite3.connect(kaldefsfile)
         cur = kaldefsdb.cursor()
 
-        cur.execute("delete from configurations where KALTURA_CONFIG_ID = ?", (kaltura_id,))
+        cur.execute("delete from configurations where KALTURA_CONFIG_ID = ?",
+                    (kaltura_id,))
 
         kaldefsdb.commit()
         cur.close()
         kaldefsdb.close()
         lockfile.close()
 
-        return simplejson.dumps({'success':success, 'messages':msgs})
+        return simplejson.dumps({'success': success, 'messages': msgs})
     except Exception as e:
-        return simplejson.dumps({'success':False, 'messages':[repr(e),str(e)]})
+        return simplejson.dumps(
+            {'success': False, 'messages': [repr(e), str(e)]})
+
 
 def update_kaltura(kaltura_id, values):
     try:
-        lockfile = open('kts-config.lock','w')
-        fcntl.lockf(lockfile,fcntl.LOCK_EX)
+        lockfile = open('kts-config.lock', 'w')
+        fcntl.lockf(lockfile, fcntl.LOCK_EX)
 
         kaldefsdb = sqlite3.connect(kaldefsfile)
         cur = kaldefsdb.cursor()
@@ -217,23 +235,27 @@ def update_kaltura(kaltura_id, values):
         kaldefsdb.close()
         lockfile.close()
 
-        return simplejson.dumps({'success':True, 'messages':None})
+        return simplejson.dumps({'success': True, 'messages': None})
     except Exception as e:
-        return simplejson.dumps({'success':False, 'messages':[repr(e),str(e)]})
+        return simplejson.dumps(
+            {'success': False, 'messages': [repr(e), str(e)]})
+
 
 def load_server_settings(SETTINGS={}):
     SETTINGS['PORT'] = os.environ.get('PORT', DEFAULT_PORT)
     SETTINGS['UPLOAD_FOLDER'] = os.environ.get(
         'UPLOAD_FOLDER', DEFAULT_UPLOAD_FOLDER)
     SETTINGS['KTS_ADMIN_USER'] = os.environ.get('KTS_ADMIN_USER',
-        DEFAULT_KTS_ADMIN_USER)
+                                                DEFAULT_KTS_ADMIN_USER)
     SETTINGS['KTS_ADMIN_PWD'] = os.environ.get('KTS_ADMIN_PWD',
-        DEFAULT_KTS_ADMIN_PWD)
+                                               DEFAULT_KTS_ADMIN_PWD)
     SETTINGS['DEBUG_MODE'] = os.environ.get('DEBUG_MODE',
-        DEFAULT_DEBUG_MODE)
-    SETTINGS['KALTURA_DEFINITIONS_DB'] = os.environ.get('KALTURA_DEFINITIONS_DB',
+                                            DEFAULT_DEBUG_MODE)
+    SETTINGS['KALTURA_DEFINITIONS_DB'] = os.environ.get(
+        'KALTURA_DEFINITIONS_DB',
         DEFAULT_KALTURA_DEFINITIONS_DB)
     return SETTINGS
+
 
 if __name__ == "__main__":
     print 'KTS server settings: '
