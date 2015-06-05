@@ -115,7 +115,16 @@ def load_kaltura_settings(SETTINGS=None):
     cur.execute("select count(*) from sqlite_master where type='table' and name='configurations'")
     existence = cur.fetchall()[0][0]
     if existence == 1:
-        cur.execute("select * from configurations")
+        cur.execute("""select KALTURA_CONFIG_ID,
+                                 KALTURA_NAME,
+                                 KALTURA_PATH,
+                                 PARTNER_ID,
+                                 PLAYER_ID,
+                                 THUMBNAIL_PLAYER_ID,
+                                 ADMIN_SECRET,
+                                 SECRET,
+                                 USER_NAME,
+                                 MOBILE_PLAYER_FLAVOR from configurations""")
         for row in cur:
             kal_id = str(row[0])
             SETTINGS[kal_id] = { kaltura_properties_list[i]:str(row[i]) for i in xrange(1,len(row)) }
