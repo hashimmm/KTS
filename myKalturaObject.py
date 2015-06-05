@@ -27,6 +27,8 @@ logging.basicConfig(level=logging.DEBUG,
 SETTINGS = {}
 properties.load_kaltura_settings(SETTINGS)
 
+KALTURA_REQUEST_TIMEOUT = 60
+KS_EXPIRY = 600
 
 DEFAULT_SEARCH_FIELD_LIST = [
                   'id',
@@ -299,7 +301,7 @@ def GetConfig(settings):
     config = KalturaConfiguration(partner_id)
     config.serviceUrl = service_url
     config.setLogger(KalturaLogger())
-    config.requestTimeout = 60
+    config.requestTimeout = KALTURA_REQUEST_TIMEOUT
     return config
 
 
@@ -314,11 +316,10 @@ def get_new_session_key(settings):
     return client.session.start(admin_secret,
                                 user_name,
                                 KalturaSessionType.ADMIN,
-                                partner_id, 86400, "")
+                                partner_id, KS_EXPIRY, "")
 
 
 def create_session(kaltura_id, ks=None):
-    ks = None  # is a hotfix for session expiry. Will change soon.
     settings = properties.load_kaltura_settings().get(kaltura_id)
     if not settings:
         raise Exception("Kaltura ID %s Settings %s" % (kaltura_id, settings))
@@ -328,7 +329,6 @@ def create_session(kaltura_id, ks=None):
             kaltura_id, repr(settings)))
     if not ks:
         ks = get_new_session_key(settings)
-        pass
     client.setKs(ks)
     return client
 
