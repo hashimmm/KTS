@@ -11,7 +11,6 @@ except ImportError:
 
         def lockf(*args, **kwargs):
             pass
-
     fcntl = FCNTL()
 
 DEFAULT_PORT = 6500
