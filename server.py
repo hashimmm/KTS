@@ -94,10 +94,10 @@ def kaltura_session_loader_base(kaltura_id, session):
     # Refresh Kaltura Session If not
     print "Current in session" + repr(session)
     kkey = 'kaltura-{}'.format(kaltura_id)
-    if kkey in session \
-        and session[kkey]['ksusages'] < 5 \
-            and (time.time() - session[kkey]['kstime']) \
-                < myKalturaObject.KS_EXPIRY:
+    if kkey in session and 'ksusages' in session[kkey] \
+        and 'ksessionkey' in session[kkey] \
+        and 'kstime' in session[kkey] and session[kkey]['ksusages'] < 5 and \
+           (time.time() - session[kkey]['kstime']) < myKalturaObject.KS_EXPIRY:
         print "I already have session. kid: {} ks: {} usages: {}".format(
             kaltura_id, session[kkey]['ksessionkey'], session[kkey]['ksusages'])
         session[kkey]['ksusages'] += 1
