@@ -7,8 +7,8 @@ from behave import given, when, then
 def caption_add(caption_file_and_name, caption_name, caption_language,
                 entry_id, kid, app):
     resp = app.post('/service/add_caption/',
-                    data={'entry_id':entry_id, 'file':caption_file_and_name,
-                          'kaltura_id':kid, 'name': caption_name,
+                    data={'entry_id': entry_id, 'file': caption_file_and_name,
+                          'kaltura_id': kid, 'name': caption_name,
                           'language': caption_language})
     resp_json = simplejson.loads(resp.data)
     assert resp_json.get('success'), 'Failed while trying to add caption'

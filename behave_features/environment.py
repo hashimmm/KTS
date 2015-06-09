@@ -8,9 +8,9 @@ import server
 server.app.config['TESTING'] = True
 app_test_client = server.app.test_client()
 
-# USE: behave -D BEHAVE_DEBUG_ON_ERROR         (to enable  debug-on-error)
-# USE: behave -D BEHAVE_DEBUG_ON_ERROR=yes     (to enable  debug-on-error)
-# USE: behave -D BEHAVE_DEBUG_ON_ERROR=no      (to disable debug-on-error)
+# USE: behave -D behave_debug_on_error         (to enable  debug-on-error)
+# USE: behave -D behave_debug_on_error=yes     (to enable  debug-on-error)
+# USE: behave -D behave_debug_on_error=no      (to disable debug-on-error)
 
 def after_step(context, step):
     if context.config.userdata.getbool("behave_debug_on_error") and step.status == "failed":
@@ -28,8 +28,6 @@ def before_all(context):
 
     logging.warning("Debug on error: %s"
                     % context.config.userdata.getbool("behave_debug_on_error"))
-    logging.warning("Debug on error: %s"
-                    % context.config.userdata.getbool("BEHAVE_DEBUG_ON_ERROR"))
 
     context.app = app_test_client
     

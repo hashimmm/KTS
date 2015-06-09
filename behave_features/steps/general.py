@@ -6,7 +6,7 @@ from testutils import upload_assets
 
 @given(u'some uploaded file')
 def given_kaltura_media(context):
-    if not 'uploads' in context.tags:
+    if 'uploads' not in context.tags:
         assert False, "Step requires scenario/feature to have 'uploads' tag."
     if context.uploads:
         context.entry_id = context.uploads[0]

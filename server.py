@@ -914,6 +914,7 @@ def update_caption_details():
 if not SETTINGS['DEBUG_MODE']:
     @app.errorhandler(myKalturaObject.KalturaException)
     def handle_kaltura_server_error(error):
+        app.logger.exception(str(error.message))
         error_dict = {
             "success": False,
             "messages": [str(error.message)] + g.get('msgs', [])
@@ -922,6 +923,7 @@ if not SETTINGS['DEBUG_MODE']:
 
     @app.errorhandler(myKalturaObject.KalturaClientException)
     def handle_kaltura_client_error(error):
+        app.logger.exception(str(error.message))
         error_dict = {
             "success": False,
             "messages": [str(error.message)] + g.get('msgs', [])
@@ -930,6 +932,7 @@ if not SETTINGS['DEBUG_MODE']:
 
     @app.errorhandler(StandardError)
     def handle_other_errors(error):
+        app.logger.exception(error.message)
         error_dict = {
             "success": False,
             "messages": [error.message] + g.get('msgs', [])

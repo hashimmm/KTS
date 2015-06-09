@@ -1,27 +1,27 @@
-import sys
-from urllib import urlencode
 import logging
-import re
-import time
 import difflib
+from urllib import urlencode
 import xml.etree.ElementTree as ET
 
-#from httplib2 import Http
+from flask import current_app
+
+# from httplib2 import Http
 from KalturaClient import *
 from KalturaMetadataClientPlugin import *
 from KalturaCaptionClientPlugin import *
-from KalturaCoreClient import KalturaThumbAsset, KalturaUrlResource, KalturaEntryStatus, KalturaThumbParams, KalturaNullableBoolean
+from KalturaCoreClient import KalturaThumbAsset, KalturaUrlResource, \
+    KalturaEntryStatus, KalturaThumbParams, KalturaNullableBoolean
 # to handle some particular kaltura exceptions:
 from KalturaClientBase import KalturaException
 
 import properties
-from utils import convert_file_to_unicode
+from utils import convert_file_to_unicode, addFileLogger
 
-
-
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(levelname)s %(message)s',
-                    stream=sys.stdout)
+if current_app:
+    logger = current_app.logger
+else:
+    logger = logging.getLogger('myKalturaObject')
+    addFileLogger(logger, "myKalturaObject.log", 2)
 
 
 SETTINGS = {}
@@ -31,37 +31,36 @@ KALTURA_REQUEST_TIMEOUT = 60
 KS_EXPIRY = 600
 
 DEFAULT_SEARCH_FIELD_LIST = [
-                  'id',
-                  'name',
-                  'status',
-                  'description',
-                  'tags',
-                  'url',
-                  'thumbnail_url',
-                  'media_type',
-                  'plays',
-                  'views',
-                  'rank',
-                  'width',
-                  'height',
-                  'duration',
-                  'views',
-                  'updated',
-                  'created',
-                  'searchtext',
-                  'startDate',
-                  'endDate',
-                  'partner_id',
-                  'user_id',
-                  'download_url',
-                  'source_type',
-                  'mediaDate',
-                  'flavorParamsId',
-                  'conversionQuality',
-                  'creditUserName',
-                  'creditUrl'
-                  ]
-
+    'id',
+    'name',
+    'status',
+    'description',
+    'tags',
+    'url',
+    'thumbnail_url',
+    'media_type',
+    'plays',
+    'views',
+    'rank',
+    'width',
+    'height',
+    'duration',
+    'views',
+    'updated',
+    'created',
+    'searchtext',
+    'startDate',
+    'endDate',
+    'partner_id',
+    'user_id',
+    'download_url',
+    'source_type',
+    'mediaDate',
+    'flavorParamsId',
+    'conversionQuality',
+    'creditUserName',
+    'creditUrl'
+]
 
 LANGUAGE_LIST = [
     "Abkhazian",
@@ -208,7 +207,6 @@ LANGUAGE_LIST = [
     "Zulu"
 ]
 
-
 kts_mobile_flavor_payload = {
     "ks": "",
     "clientTag": "testme",
@@ -273,23 +271,21 @@ def parse_caption_language(capfile, capformat):
                 langcode = v
         if not langcode:
             langcode = "en"
-            logging.info('no language found in xml, defaulting to English.')
+            logger.info('no language found in xml, defaulting to English.')
         langcode = langcode.upper()
         print langcode
         try:
             language = KalturaLanguage.__dict__[langcode]
         except:
             language = "English"
-            logging.warning('Unsupported language "{}" in xml, '
+            logger.warning('Unsupported language "{}" in xml, '
                             'defaulting to English'.format(langcode))
     return language
 
 
-
 class KalturaLogger(IKalturaLogger):
-
     def log(self, msg):
-        logging.info(msg)
+        logger.info(msg)
 
 
 def GetConfig(settings):
@@ -354,7 +350,7 @@ def pullVideo(pull_path,
               client=None,
               media_type=None):
     try:
-    # if True:
+        # if True:
         # create session
         if client is None:
             raise Exception("Client can not be None")
@@ -382,7 +378,7 @@ def uploadVideo(file_path,
                 client=None,
                 media_type=None):
     try:
-    # if True:
+        # if True:
         # create session
         if client is None:
             raise Exception("Client can not be None")
@@ -409,15 +405,17 @@ def uploadVideo(file_path,
 
 def updateThumbnail(file_path, entry_id, client=None, set_default=False):
     try:
-     # create session
+        # create session
         if client is None:
             raise Exception("Client can not be None")
         thumbnail_asset_service = KalturaThumbAssetService(client)
         thumb_asset = KalturaThumbAsset()
-        thumb_asset = thumbnail_asset_service.addFromImage(entry_id, file(file_path, 'rb'))
+        thumb_asset = thumbnail_asset_service.addFromImage(entry_id,
+                                                           file(file_path,
+                                                                'rb'))
         if set_default:
             thumbnail_set_default(client, thumb_asset.getId())
-        #mediaEntry = client.baseEntry.updateThumbnailJpeg(
+            # mediaEntry = client.baseEntry.updateThumbnailJpeg(
         #    entry_id, file(file_path, 'rb'))
         return (True, thumb_asset.getId())
     except:
@@ -433,7 +431,8 @@ def updateThumbnailFromPlayer(offset, entry_id, client=None):
         thumb_params = KalturaThumbParams()
         thumb_params.setVideoOffset(round(offset))
         source_asset_id = None
-        thumbasset = thumbnail_asset_service.generate(entry_id, thumb_params, source_asset_id)
+        thumbasset = thumbnail_asset_service.generate(entry_id, thumb_params,
+                                                      source_asset_id)
         thumbnail_set_default(client, thumbasset.id)
         # mediaEntry = client.baseEntry.updateThumbnailFromSourceEntry(
         #     entry_id, entry_id, round(offset))
@@ -456,7 +455,8 @@ def thumbnail_delete(client, thumbnail_id):
                              'messages': ke.message,
                              'error': 'thumbnail is default'}
         else:
-            msgs.append('Deletion failed for thumbnail with ID %s' % thumbnail_id)
+            msgs.append(
+                'Deletion failed for thumbnail with ID %s' % thumbnail_id)
             msgs.append('Exception: ' + str(ke))
             returncontent = {'success': False, 'message': msgs}
     except Exception as e:
@@ -468,7 +468,7 @@ def thumbnail_delete(client, thumbnail_id):
 
 def thumbnail_list(client, entry_id, in_dict=True):
     try:
-    # if True:
+        # if True:
         thumb_asset_service = KalturaThumbAssetService(client)
         kfilter = KalturaAssetFilter()
         kfilter.entryIdEqual = entry_id
@@ -478,7 +478,8 @@ def thumbnail_list(client, entry_id, in_dict=True):
         for thumbnail in response.objects:
             if in_dict:
                 thumbinfo = thumbnail_dictify(thumbnail)
-                thumbinfo['url'] = thumb_asset_service.getUrl(thumbinfo['id'], None)
+                thumbinfo['url'] = thumb_asset_service.getUrl(thumbinfo['id'],
+                                                              None)
                 thumbnail_list.append(thumbinfo)
             else:
                 thumbnail_list.append(thumbnail)
@@ -487,7 +488,8 @@ def thumbnail_list(client, entry_id, in_dict=True):
         return thumbnail_list
     except:
         return (False,
-                "Unexpected error retrieving thumbnail list:" + "<p>" + repr(sys.exc_info()) + "</p>")
+                "Unexpected error retrieving thumbnail list:" + "<p>" + repr(
+                    sys.exc_info()) + "</p>")
 
 
 def thumbnail_set_default(client, thumbnail_id):
@@ -498,7 +500,8 @@ def thumbnail_set_default(client, thumbnail_id):
         msgs.append('Thumbnail with id ' + thumbnail_id + ' set as default')
         return {'success': True, 'message': msgs}
     except Exception as e:
-        msgs.append('setAsDefault failed for thumbnail with ID %s' % thumbnail_id)
+        msgs.append(
+            'setAsDefault failed for thumbnail with ID %s' % thumbnail_id)
         msgs.append('Exception: ' + str(e))
         return {'success': False, 'message': msgs}
 
@@ -515,18 +518,20 @@ def thumbnail_get_default(client, entry_id, in_dict=True):
         for thumbnail in response.objects:
             if in_dict:
                 thumbinfo = thumbnail_dictify(thumbnail)
-                thumbinfo['url'] = thumb_asset_service.getUrl(thumbinfo['id'], None)
+                thumbinfo['url'] = thumb_asset_service.getUrl(thumbinfo['id'],
+                                                              None)
                 thumbnail_list.append(thumbinfo)
             else:
                 thumbnail_list.append(thumbnail)
         default_thumb = None
         for item in thumbnail_list:
-                if item.get('default', False) == True:
-                    default_thumb = item
+            if item.get('default', False) == True:
+                default_thumb = item
         return default_thumb
     except:
         return (False,
-                "Unexpected error retrieving thumbnail list:" + "<p>" + repr(sys.exc_info()) + "</p>")
+                "Unexpected error retrieving thumbnail list:" + "<p>" + repr(
+                    sys.exc_info()) + "</p>")
 
 
 def thumbnail_add_from_url(client, entry_id, thumburl):
@@ -539,10 +544,13 @@ def thumbnail_add_from_url(client, entry_id, thumburl):
         msgs.append('ThumbAsset added to entry, id %s' % thumb_id)
         content_resource = KalturaUrlResource(url=thumburl)
         thumbnail_asset_service.setContent(thumb_id, content_resource)
-        msgs.append('url %s applied to thumbnail with id %s' % (thumburl, thumb_id))
+        msgs.append(
+            'url %s applied to thumbnail with id %s' % (thumburl, thumb_id))
         return {'success': True, 'message': msgs}
     except Exception as e:
-        msgs.append('Failed to add thumbnail from %s to media with entry_id %s' % (entry_id, thumburl))
+        msgs.append(
+            'Failed to add thumbnail from %s to media with entry_id %s' % (
+            entry_id, thumburl))
         msgs.append('Exception: ' + str(e))
         return {'success': False, 'message': msgs}
 
@@ -579,10 +587,10 @@ def add_flavor_to_default_conversion_profile(client, flavor_id, kaltura_id):
 
 
 def searchVideos(client,
-                kaltura_id=None,
-                composite=False,
-                page_size=None,
-                page_index=None):
+                 kaltura_id=None,
+                 composite=False,
+                 page_size=None,
+                 page_index=None):
     # Setup a pager and search to use
     # pager = KalturaFilterPager()
     # pager.setPageSize(5)
@@ -617,7 +625,8 @@ def searchVideos(client,
             KalturaEntryStatus.INFECTED: "virusScan.Infected",
             KalturaEntryStatus.SCAN_FAILURE: "virusScan.ScanFailure"
         }
-        entryData['status'] = status_codes.get(entry.getStatus().getValue(), 'UNKNOWN')
+        entryData['status'] = status_codes.get(entry.getStatus().getValue(),
+                                               'UNKNOWN')
         # Urls/Accessors
         entryData['url'] = entry.getDataUrl()
         entryData['download_url'] = entry.getDownloadUrl()
@@ -634,15 +643,17 @@ def searchVideos(client,
             KalturaMediaType.LIVE_STREAM_QUICKTIME: 'LIVE_STREAM_QUICKTIME'
         }
         sourcetypelist = {
-            KalturaSourceType.FILE : "FILE",
-            KalturaSourceType.WEBCAM : "WEBCAM",
-            KalturaSourceType.URL : "URL",
-            KalturaSourceType.SEARCH_PROVIDER : "SEARCH_PROVIDER",
-            KalturaSourceType.AKAMAI_LIVE : "AKAMAI_LIVE",
-            KalturaSourceType.MANUAL_LIVE_STREAM : "MANUAL_LIVE_STREAM"
+            KalturaSourceType.FILE: "FILE",
+            KalturaSourceType.WEBCAM: "WEBCAM",
+            KalturaSourceType.URL: "URL",
+            KalturaSourceType.SEARCH_PROVIDER: "SEARCH_PROVIDER",
+            KalturaSourceType.AKAMAI_LIVE: "AKAMAI_LIVE",
+            KalturaSourceType.MANUAL_LIVE_STREAM: "MANUAL_LIVE_STREAM"
         }
-        entryData['media_type'] = typelist.get(entry.getMediaType().getValue(), 'UNKNOWN')
-        entryData['source_type'] = sourcetypelist.get(entry.getSourceType().getValue(), 'UNKNOWN')
+        entryData['media_type'] = typelist.get(entry.getMediaType().getValue(),
+                                               'UNKNOWN')
+        entryData['source_type'] = sourcetypelist.get(
+            entry.getSourceType().getValue(), 'UNKNOWN')
         # ViewData
         entryData['plays'] = entry.getPlays()
         entryData['views'] = entry.getViews()
@@ -728,7 +739,8 @@ def get_entry(media_id, kaltura_id, client=None, width=120, height=120):
         thumbnail_url = "%s/p/%s/thumbnail/entry_id/%s" % (
             settings['SERVICE_URL'], settings['PARTNER_ID'], media_id)
         entryData['thumbnail_url'] = thumbnail_url + \
-            "/width/%s/height/%s?%s" % (width, height, int(time.time()) )
+                                     "/width/%s/height/%s?%s" % (
+                                     width, height, int(time.time()))
         entryData['download_url'] = entry.getDownloadUrl()
         entryData['thumb_id'] = thumb_id
         # ViewData
@@ -750,19 +762,19 @@ def get_entry(media_id, kaltura_id, client=None, width=120, height=120):
         # Control
         entryData['startDate'] = entry.getStartDate()
         entryData['endDate'] = entry.getEndDate()
-        #entryData['status'] = entry.getStatus()
+        # entryData['status'] = entry.getStatus()
     return entryData
 
 
 def del_entry(media_id, client=None):
-    #error = False
+    # error = False
     error_message = None
     try:
         client.media.delete(media_id)
         return {"success": True, "message": "MEDIA_DELETED"}
     except Exception as inst:
         error_message = str(inst)
-        #error = True
+        # error = True
     return {"success": False, "message": error_message}
 
 
@@ -786,7 +798,8 @@ def add_caption(captionfile,
     # 1: set parameters for caption_asset
     caption_asset = KalturaCaptionAsset()
     if default:
-        caption_asset.setIsDefault(KalturaNullableBoolean(KalturaNullableBoolean.TRUE_VALUE))
+        caption_asset.setIsDefault(
+            KalturaNullableBoolean(KalturaNullableBoolean.TRUE_VALUE))
     if language == 'auto':
         suggested_lang = parse_caption_language(captionfile, capformat)
         autolang = difflib.get_close_matches(suggested_lang,
@@ -865,15 +878,17 @@ def thumbnail_dictify(thumbasset):
     thumb_details['height'] = thumbasset.getHeight()
     thumb_details['size'] = thumbasset.getSize()
     thumb_details['created_at'] = thumbasset.getCreatedAt()
-    thumb_details['default'] = True if thumbasset.getTags() == 'default_thumb' else False
+    thumb_details[
+        'default'] = True if thumbasset.getTags() == 'default_thumb' else False
     status_codes = {
-         -1: 'ERROR',
-         0: 'QUEUED',
-         2: 'READY',
-         3: 'DELETED',
-         7: 'IMPORTING'
-         }
-    thumb_details['status'] = status_codes.get(thumbasset.getStatus().getValue(), 'UNKNOWN')
+        -1: 'ERROR',
+        0: 'QUEUED',
+        2: 'READY',
+        3: 'DELETED',
+        7: 'IMPORTING'
+    }
+    thumb_details['status'] = status_codes.get(
+        thumbasset.getStatus().getValue(), 'UNKNOWN')
     return thumb_details
 
 
@@ -909,11 +924,11 @@ def update_caption(caption_id, language, capformat, name, default, client):
     caption_asset = KalturaCaptionAsset()
     if language:
         if True:
-        # try:
+            # try:
             caption_asset.setLanguage(KalturaLanguage(language.capitalize()))
             msgs.append('language is ' + language)
-        # except:
-         #   msgs.append('unable to set language. ')
+            # except:
+            #   msgs.append('unable to set language. ')
     if capformat:
         if capformat.lower() == 'srt':
             capformat = KalturaCaptionType.SRT
@@ -929,11 +944,12 @@ def update_caption(caption_id, language, capformat, name, default, client):
         msgs.append('label (name) is ' + name)
     if default:
         msgs.append('default is true')
-        caption_asset.setIsDefault(KalturaNullableBoolean(KalturaNullableBoolean.TRUE_VALUE))
+        caption_asset.setIsDefault(
+            KalturaNullableBoolean(KalturaNullableBoolean.TRUE_VALUE))
     if True:
-    # try:
+        # try:
         caption_asset_service.update(caption_id, caption_asset)
-    # except Exception as e:
+        # except Exception as e:
         # return {'success':False, 'messages':str(e)}
     return {'success': True, 'messages': msgs}
 
@@ -966,7 +982,7 @@ def caption_set_default(caption_id, client):
 
 def remote_thumbs(client, thumb_id):
     if client is None:
-            raise Exception("Client can not be None")
+        raise Exception("Client can not be None")
     thumbnail_asset_service = KalturaThumbAssetService(client)
     remote_paths = thumbnail_asset_service.getRemotePaths(thumb_id)
     return {"success": True, "paths": remote_paths}

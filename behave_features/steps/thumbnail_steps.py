@@ -7,8 +7,8 @@ from behave import given, when, then
 
 def thumbnail_update(thumbnail_file_and_name, entry_id, kid, app):
     resp = app.post('/service/update_thumbnail_file',
-                    data={'entry_id':entry_id, 'file':thumbnail_file_and_name,
-                          'kaltura_id':kid})
+                    data={'entry_id': entry_id, 'file': thumbnail_file_and_name,
+                          'kaltura_id': kid})
     resp_json = simplejson.loads(resp.data)
     assert resp_json.get('success'), 'Failed while trying to update thumbnail'
     assert resp_json.get('thumbnail_id'), 'Response must contain thumbnail_id'
@@ -77,7 +77,7 @@ def check_thumb_list_length(context):
 
 @then(u'thumbnail can be deleted')
 def del_thumb(context):
-    non_default_thumbs = [item['id'] for item 
+    non_default_thumbs = [item['id'] for item
                           in context.thumbnails_list if not item['default']]
     if not non_default_thumbs:
         assert False, ('Thumbnail deletion untested; '
