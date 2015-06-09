@@ -1,4 +1,5 @@
 import logging
+import six
 import shutil
 import os
 from logging.handlers import RotatingFileHandler
@@ -31,7 +32,7 @@ def convert_file_to_unicode(filepath):
         with open(filepath, 'w') as fp:
             fp.write(utext.encode('utf8'))
     except:
-        print "Warning: Error during conversion to unicode!"
+        print ("Warning: Error during conversion to unicode!")
         os.remove(filepath)
         shutil.copy(filepath + ".bu", filepath)
     finally:
@@ -43,9 +44,9 @@ def crossdomain(origin=None, methods=None, headers=None,
                 automatic_options=True):
     if methods is not None:
         methods = ', '.join(sorted(x.upper() for x in methods))
-    if headers is not None and not isinstance(headers, basestring):
+    if headers is not None and not isinstance(headers, six.string_types):
         headers = ', '.join(x.upper() for x in headers)
-    if not isinstance(origin, basestring):
+    if not isinstance(origin, six.string_types):
         origin = ', '.join(origin)
     if isinstance(max_age, timedelta):
         max_age = max_age.total_seconds()

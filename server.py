@@ -92,14 +92,15 @@ def _parse_ids(args, form):
 
 def kaltura_session_loader_base(kaltura_id, session):
     # Refresh Kaltura Session If not
-    print "Current in session" + repr(session)
+    print ("Current in session" + repr(session))
     kkey = 'kaltura-{}'.format(kaltura_id)
     if kkey in session and 'ksusages' in session[kkey] \
         and 'ksessionkey' in session[kkey] \
         and 'kstime' in session[kkey] and session[kkey]['ksusages'] < 5 and \
            (time.time() - session[kkey]['kstime']) < myKalturaObject.KS_EXPIRY:
-        print "I already have session. kid: {} ks: {} usages: {}".format(
-            kaltura_id, session[kkey]['ksessionkey'], session[kkey]['ksusages'])
+        print ("I already have session. kid: {} ks: {} usages: {}" . 
+        format(
+            kaltura_id, session[kkey]['ksessionkey'], session[kkey]['ksusages']))
         session[kkey]['ksusages'] += 1
         return myKalturaObject.create_session(kaltura_id,
                                               session[kkey]["ksessionkey"])
@@ -335,7 +336,7 @@ def upload_file_service():
         raise Exception("kaltura_id not provided")
         # kaltura_session = kaltura_session_loader(kaltura_id)
     if request.method == 'POST':
-        print "Inside Post Body"
+        print ("Inside Post Body")
         # Three Modes of Consumption.
         # 1. FromLocal
         # 2. File Post
@@ -343,14 +344,14 @@ def upload_file_service():
         pull_path = request.form.get('pullPath', None)
         if not pull_path:
             pull_path = request.args.get('pullPath', None)
-        print "PullPath", pull_path
+        print ("PullPath", pull_path)
 
         fromlocal = request.form.get('fromlocal', None)
         if not fromlocal:
             fromlocal = request.args.get('fromlocal', None)
-        print "FromLocal", fromlocal
+        print ("FromLocal", fromlocal)
 
-        print request.files.keys()
+        print (request.files.keys())
         medianame = request.form.get('medianame', None)
         if not medianame:
             medianame = request.args['medianame']
@@ -930,7 +931,7 @@ if not SETTINGS['DEBUG_MODE']:
         }
         return simplejson.dumps(error_dict), 500
 
-    @app.errorhandler(StandardError)
+    @app.errorhandler(Exception)
     def handle_other_errors(error):
         app.logger.exception(error.message)
         error_dict = {
@@ -944,8 +945,8 @@ if __name__ == '__main__':
     app.debug = True if SETTINGS['DEBUG_MODE'] else False
     from pprint import pprint
 
-    print "Starting with server settings"
+    print ("Starting with server settings")
     pprint(SETTINGS)
-    print "Starting with kaltura settings"
+    print ("Starting with kaltura settings")
     pprint(properties.load_kaltura_settings())
     app.run(host='0.0.0.0', port=int(SETTINGS['PORT']))

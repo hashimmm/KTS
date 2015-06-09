@@ -11,9 +11,9 @@ import os
 
 from poster.streaminghttp import register_openers
 from poster.encode import multipart_encode
-import urllib2
+import urllib.request
 
-# Register the streaming http handlers with urllib2
+# Register the streaming http handlers with urllib.request
 register_openers()
 
 pluginsFolder = os.path.normpath(os.path.join(os.path.dirname(__file__), 'KalturaPlugins'))
@@ -163,16 +163,17 @@ class KalturaClient:
                 paramsdict = params.get()
                 paramsdict = {key.encode('utf-8'): paramsdict[key].encode('utf-8') for key in paramsdict}
                 f = urllib.urlopen(url, urllib.urlencode(paramsdict))
-            except Exception, e:
+            #except Exception, e:
+            except Exception as e:
                 raise KalturaClientException(e, KalturaClientException.ERROR_CONNECTION_FAILED)
         else:
             fullParams = params
             fullParams.update(files)
             datagen, headers = multipart_encode(fullParams.get())
-            request = urllib2.Request(url, datagen, headers)
+            request = urllib.request.Request(url, datagen, headers)
             try:
-                f = urllib2.urlopen(request)
-            except Exception, e:
+                f = urllib.request.urlopen(request)
+            except Exception as e:
                 raise KalturaClientException(e, KalturaClientException.ERROR_CONNECTION_FAILED)
         return f
 
@@ -184,9 +185,9 @@ class KalturaClient:
         try:
             try:
                 data = f.read()
-            except AttributeError, e:      # socket was closed while reading
+            except Exception as e:
                 raise KalturaClientException(e, KalturaClientException.ERROR_READ_TIMEOUT)
-            except Exception, e:
+            except Exception as e:
                 raise KalturaClientException(e, KalturaClientException.ERROR_READ_FAILED)
         finally:
             if requestTimeout != None:
@@ -219,7 +220,7 @@ class KalturaClient:
 
         try:        
             resultXml = minidom.parseString(postResult)
-        except ExpatError, e:
+        except Exception as e:
             raise KalturaClientException(e, KalturaClientException.ERROR_INVALID_XML)
             
         resultNode = getChildNodeByXPath(resultXml, 'xml/result')

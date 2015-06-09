@@ -96,10 +96,10 @@ def get_KalturaMediaType_from_pull_url(purl, default):
             uo.read(10240), mime=True).split('/')[0].upper()
         uo.close()
     except:
-        print 'couldn\'t find type via magic, using ext...'
+        print ('couldn\'t find type via magic, using ext...')
         magic_type = check_type(os.path.splitext(purl)[1].lstrip('.'))
     if magic_type == 'APPLICATION':
-        print 'magic returned arbitrary type (application/x-octet-stream thingy), tryna use ext instead'
+        print ('magic returned arbitrary type (application/x-octet-stream thingy), tryna use ext instead')
         magic_type = check_type(os.path.splitext(purl)[1].lstrip('.'))
     if magic_type == 'VIDEO':
         return KalturaMediaType.VIDEO
@@ -108,13 +108,13 @@ def get_KalturaMediaType_from_pull_url(purl, default):
     elif magic_type == 'IMAGE':
         return KalturaMediaType.IMAGE
     elif default.lower() == 'video':
-        print 'failed to get type, using default.'
+        print ('failed to get type, using default.')
         return KalturaMediaType.VIDEO
     elif default.lower() == 'audio':
-        print 'failed to get type, using default.'
+        print ('failed to get type, using default.')
         return KalturaMediaType.AUDIO
     elif default.lower() == 'image':
-        print 'failed to get type, using default.'
+        print ('failed to get type, using default.')
         return KalturaMediaType.IMAGE
 
 

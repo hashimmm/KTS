@@ -1,6 +1,6 @@
 import logging
 import difflib
-from urllib import urlencode
+from urllib.parse import urlencode
 import xml.etree.ElementTree as ET
 
 from flask import current_app
@@ -273,7 +273,7 @@ def parse_caption_language(capfile, capformat):
             langcode = "en"
             logger.info('no language found in xml, defaulting to English.')
         langcode = langcode.upper()
-        print langcode
+        print (langcode)
         try:
             language = KalturaLanguage.__dict__[langcode]
         except:
@@ -293,7 +293,7 @@ def GetConfig(settings):
         raise Exception("Settings not set in GetConfig")
     partner_id = int(settings.get('PARTNER_ID'))
     service_url = settings.get('SERVICE_URL')
-    print "-> GetConfig", partner_id, service_url
+    print ("-> GetConfig", partner_id, service_url)
     config = KalturaConfiguration(partner_id)
     config.serviceUrl = service_url
     config.setLogger(KalturaLogger())
@@ -308,7 +308,7 @@ def get_new_session_key(settings):
     admin_secret = settings.get('ADMIN_SECRET')
     user_name = settings.get('USER_NAME')
     client = KalturaClient(GetConfig(settings))
-    print "-> get_new_session_key", admin_secret, user_name, partner_id
+    print ("-> get_new_session_key", admin_secret, user_name, partner_id)
     return client.session.start(admin_secret,
                                 user_name,
                                 KalturaSessionType.ADMIN,
@@ -604,7 +604,7 @@ def searchVideos(client,
     search = KalturaMediaEntryFilter()
     search.setOrderBy(KalturaMediaEntryOrderBy.CREATED_AT_ASC)
     # search.setMediaTypeEqual(KalturaMediaType.VIDEO)  # Video only
-    print "List videos, get the first one..."
+    print ("List videos, get the first one...")
     # Get 10 video entries, but we'll just use the first one returned
     entries = client.media.list(search, pager).objects
     entriesData = []

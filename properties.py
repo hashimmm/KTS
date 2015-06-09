@@ -77,7 +77,7 @@ kaltura_properties_list = ['KALTURA_CONFIG_ID', 'KALTURA_NAME', 'KALTURA_PATH',
 def load_kals_from_env(SETTINGS, cur):
     kaltura_count = int(os.environ.get("KALTURA_INSTANCES", "1"))
     if kaltura_count >= 1:
-        for counter in xrange(1, kaltura_count + 1):
+        for counter in range(1, kaltura_count + 1):
             accessors = ['k_%d_%s' % (counter, kal_prop)
                          for kal_prop in kaltura_properties_list]
             # Because the Global Dictionary will be populated with this guy
@@ -257,10 +257,9 @@ def load_server_settings(SETTINGS={}):
 
 
 if __name__ == "__main__":
-    print 'KTS server settings: '
+    print ('KTS server settings: ')
     settings = load_server_settings()
     pprint(settings)
-    print ''
-    print 'Kaltura definitions: '
+    print ('Kaltura definitions: ')
     kaldefs = load_kaltura_settings()
     pprint(kaldefs)
