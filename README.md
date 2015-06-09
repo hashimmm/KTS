@@ -16,7 +16,7 @@ It includes helpful default behavior like auto-detecting media type during
 To install dependencies, run: 
 `pip install -r requirements.txt`.
 
-### Note that on Unix/Linux machine, one must run this with superuser [root] privileges.
+*Note that on Unix/Linux machine, one must run this with superuser [root] privileges.*
 
 To run:
 `python server.py`.
