@@ -1,3 +1,5 @@
+import utils
+
 class User():
     i_id = None
 
@@ -16,7 +18,7 @@ class User():
         return False
 
     def get_id(self):
-        return unicode(self.i_id)
+        return utils.maybe_cast_to_unicode(self.i_id)
 
     def __repr__(self):
         return '<User with id %r>' % (self.i_id)

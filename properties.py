@@ -2,6 +2,7 @@ import os
 import sqlite3
 import simplejson
 from pprint import pprint
+from utils import rangegen
 
 try:
     import fcntl
@@ -12,6 +13,7 @@ except ImportError:
         def lockf(*args, **kwargs):
             pass
     fcntl = FCNTL()
+
 
 DEFAULT_PORT = 6500
 DEFAULT_UPLOAD_FOLDER = ""
@@ -77,7 +79,7 @@ kaltura_properties_list = ['KALTURA_CONFIG_ID', 'KALTURA_NAME', 'KALTURA_PATH',
 def load_kals_from_env(SETTINGS, cur):
     kaltura_count = int(os.environ.get("KALTURA_INSTANCES", "1"))
     if kaltura_count >= 1:
-        for counter in xrange(1, kaltura_count + 1):
+        for counter in rangegen(1, kaltura_count + 1):
             accessors = ['k_%d_%s' % (counter, kal_prop)
                          for kal_prop in kaltura_properties_list]
             # Because the Global Dictionary will be populated with this guy
@@ -97,7 +99,7 @@ def load_kals_from_env(SETTINGS, cur):
             SETTINGS[config_id.split("_")[1]] = temp_kaltura_config_map
             values = [config_id.split("_")[1]] + \
                      [temp_kaltura_config_map.get(kaltura_properties_list[j])
-                      for j in xrange(1, len(kaltura_properties_list))]
+                      for j in rangegen(1, len(kaltura_properties_list))]
             cur.execute(
                 "insert into configurations values(?,?,?,?,?,?,?,?,?,?)",
                 values)
@@ -133,7 +135,7 @@ def load_kaltura_settings(SETTINGS=None):
         for row in cur:
             kal_id = str(row[0])
             SETTINGS[kal_id] = {kaltura_properties_list[i]: str(row[i]) for i in
-                                xrange(1, len(row))}
+                                rangegen(1, len(row))}
             # a.k.a dict( zip( kaltura_properties_list[1:], row[1:] ) )
             SETTINGS[kal_id]['SERVICE_URL'] = "http://" + SETTINGS[kal_id][
                 'KALTURA_PATH']
@@ -257,10 +259,9 @@ def load_server_settings(SETTINGS={}):
 
 
 if __name__ == "__main__":
-    print 'KTS server settings: '
+    print ('KTS server settings: ')
     settings = load_server_settings()
     pprint(settings)
-    print ''
-    print 'Kaltura definitions: '
+    print ('Kaltura definitions: ')
     kaldefs = load_kaltura_settings()
     pprint(kaldefs)

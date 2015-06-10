@@ -92,14 +92,15 @@ def _parse_ids(args, form):
 
 def kaltura_session_loader_base(kaltura_id, session):
     # Refresh Kaltura Session If not
-    print "Current in session" + repr(session)
+    print ("Current in session" + repr(session))
     kkey = 'kaltura-{}'.format(kaltura_id)
     if kkey in session and 'ksusages' in session[kkey] \
         and 'ksessionkey' in session[kkey] \
         and 'kstime' in session[kkey] and session[kkey]['ksusages'] < 5 and \
            (time.time() - session[kkey]['kstime']) < myKalturaObject.KS_EXPIRY:
-        print "I already have session. kid: {} ks: {} usages: {}".format(
-            kaltura_id, session[kkey]['ksessionkey'], session[kkey]['ksusages'])
+        print ("I already have session. kid: {} ks: {} usages: {}" . 
+        format(
+            kaltura_id, session[kkey]['ksessionkey'], session[kkey]['ksusages']))
         session[kkey]['ksusages'] += 1
         return myKalturaObject.create_session(kaltura_id,
                                               session[kkey]["ksessionkey"])
@@ -168,7 +169,7 @@ def add_config():
 @login_required
 def submit_add_config():
     values = [request.args.get(properties.kaltura_properties_list[j]) for \
-              j in xrange(1, len(properties.kaltura_properties_list))]
+              j in utils.rangegen(1, len(properties.kaltura_properties_list))]
     resp = simplejson.loads(properties.add_kaltura(values))
     if resp.get('success', False) == True:
         message = 'Added'
@@ -251,8 +252,9 @@ def view_configs_prettyjson():
 @login_required
 def view_configs():
     props = properties.load_kaltura_settings()
-    columns = ['id'] + props[props.keys()[0]].keys()
-    data = [[key] + props[key].values() for key in sorted(props.keys())]
+    columns = ['id'] + list(props[list(props.keys())[0]].keys())
+    data = [[key] + list(props[key].values())
+            for key in sorted(list(props.keys()))]
     return render_template('kaltura_configs.html',
                            columns=columns,
                            data=data)
@@ -306,7 +308,7 @@ def get_excel():
     worksheet = get_new_worksheet(workbook)
     i = total / pagesize + (1 if total % pagesize else 0)
     skipped = 0
-    for num in xrange(i):
+    for num in utils.rangegen(i):
         data = myKalturaObject.searchVideos(
             client, kaltura_id, True, int(pagesize), num + 1)
         write_result = write_to_worksheet(worksheet,
@@ -335,7 +337,7 @@ def upload_file_service():
         raise Exception("kaltura_id not provided")
         # kaltura_session = kaltura_session_loader(kaltura_id)
     if request.method == 'POST':
-        print "Inside Post Body"
+        print ("Inside Post Body")
         # Three Modes of Consumption.
         # 1. FromLocal
         # 2. File Post
@@ -343,14 +345,14 @@ def upload_file_service():
         pull_path = request.form.get('pullPath', None)
         if not pull_path:
             pull_path = request.args.get('pullPath', None)
-        print "PullPath", pull_path
+        print ("PullPath", pull_path)
 
         fromlocal = request.form.get('fromlocal', None)
         if not fromlocal:
             fromlocal = request.args.get('fromlocal', None)
-        print "FromLocal", fromlocal
+        print ("FromLocal", fromlocal)
 
-        print request.files.keys()
+        print (request.files.keys())
         medianame = request.form.get('medianame', None)
         if not medianame:
             medianame = request.args['medianame']
@@ -914,28 +916,28 @@ def update_caption_details():
 if not SETTINGS['DEBUG_MODE']:
     @app.errorhandler(myKalturaObject.KalturaException)
     def handle_kaltura_server_error(error):
-        app.logger.exception(str(error.message))
+        app.logger.exception(str(error))
         error_dict = {
             "success": False,
-            "messages": [str(error.message)] + g.get('msgs', [])
+            "messages": [str(error)] + g.get('msgs', [])
         }
         return simplejson.dumps(error_dict), 500
 
     @app.errorhandler(myKalturaObject.KalturaClientException)
     def handle_kaltura_client_error(error):
-        app.logger.exception(str(error.message))
+        app.logger.exception(str(error))
         error_dict = {
             "success": False,
-            "messages": [str(error.message)] + g.get('msgs', [])
+            "messages": [str(error)] + g.get('msgs', [])
         }
         return simplejson.dumps(error_dict), 500
 
-    @app.errorhandler(StandardError)
+    @app.errorhandler(Exception)
     def handle_other_errors(error):
-        app.logger.exception(error.message)
+        app.logger.exception(str(error))
         error_dict = {
             "success": False,
-            "messages": [error.message] + g.get('msgs', [])
+            "messages": [str(error)] + g.get('msgs', [])
         }
         return simplejson.dumps(error_dict), 500
 
@@ -944,8 +946,8 @@ if __name__ == '__main__':
     app.debug = True if SETTINGS['DEBUG_MODE'] else False
     from pprint import pprint
 
-    print "Starting with server settings"
+    print ("Starting with server settings")
     pprint(SETTINGS)
-    print "Starting with kaltura settings"
+    print ("Starting with kaltura settings")
     pprint(properties.load_kaltura_settings())
     app.run(host='0.0.0.0', port=int(SETTINGS['PORT']))

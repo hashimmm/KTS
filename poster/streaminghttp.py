@@ -1,6 +1,6 @@
 """Streaming HTTP uploads module.
 
-This module extends the standard httplib and urllib2 objects so that
+This module extends the standard httplib and urllib.request objects so that
 iterable objects can be used in the body of HTTP requests.
 
 In most cases all one should have to do is call :func:`register_openers()`
@@ -15,7 +15,7 @@ yielded, and there is no way to reset an interator.
 Example usage:
 
 >>> from StringIO import StringIO
->>> import urllib2, poster.streaminghttp
+>>> import urllib.request, poster.streaminghttp
 
 >>> opener = poster.streaminghttp.register_openers()
 
@@ -25,9 +25,37 @@ Example usage:
 >>> req = urllib2.Request("http://localhost:5000", f,
 ...                       {'Content-Length': str(len(s))})
 """
+import sys
+try:
+    import httplib
+except ImportError:
+    import http.client as httplib
+try:
+    import urllib2
+except ImportError:
+    import urllib.request as urllib2
+import socket
+try:
+    from httplib import NotConnected
+except ImportError:
+    from http.client import NotConnected
 
-import httplib, urllib2, socket
-from httplib import NotConnected
+
+if sys.version_info[0] > 2:
+    def has_data(req):
+        return True if req.data else False
+    def get_data(req):
+        return req.data
+    def get_origin_req_host(req):
+        return req.origin_req_host
+else:
+    def has_data(req):
+        return req.has_data()
+    def get_data(req):
+        return req.get_data()
+    def origin_req_host(req):
+        return req.get_origin_req_host()
+
 
 __all__ = ['StreamingHTTPConnection', 'StreamingHTTPRedirectHandler',
         'StreamingHTTPHandler', 'register_openers']
@@ -58,15 +86,17 @@ class _StreamingHTTPMixin:
         # NOTE: we DO propagate the error, though, because we cannot simply
         #       ignore the error... the caller will know if they can retry.
         if self.debuglevel > 0:
-            print "send:", repr(value)
+            print ("send:", repr(value))
         try:
             blocksize = 8192
             if hasattr(value, 'read') :
                 if hasattr(value, 'seek'):
                     value.seek(0)
                 if self.debuglevel > 0:
-                    print "sendIng a read()able"
+                    print ("sendIng a read()able")
                 data = value.read(blocksize)
+                if sys.version_info[0] > 2:
+                    data = data.encode('utf8')
                 while data:
                     self.sock.sendall(data)
                     data = value.read(blocksize)
@@ -74,12 +104,15 @@ class _StreamingHTTPMixin:
                 if hasattr(value, 'reset'):
                     value.reset()
                 if self.debuglevel > 0:
-                    print "sendIng an iterable"
+                    print ("sendIng an iterable")
                 for data in value:
+                    if sys.version_info[0] > 2 and hasattr(data, 'encode'):
+                        data = data.encode('utf8')
                     self.sock.sendall(data)
             else:
                 self.sock.sendall(value)
-        except socket.error, v:
+        except socket.error as v:
+        
             if v[0] == 32:      # Broken pipe
                 self.close()
             raise
@@ -99,7 +132,7 @@ class StreamingHTTPRedirectHandler(urllib2.HTTPRedirectHandler):
 
     handler_order = urllib2.HTTPRedirectHandler.handler_order - 1
 
-    # From python2.6 urllib2's HTTPRedirectHandler
+    # From python2.6 urllib.request's HTTPRedirectHandler
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         """Return a Request or None in response to a redirect.
 
@@ -115,7 +148,7 @@ class StreamingHTTPRedirectHandler(urllib2.HTTPRedirectHandler):
             or code in (301, 302, 303) and m == "POST"):
             # Strictly (according to RFC 2616), 301 or 302 in response
             # to a POST MUST NOT cause a redirection without confirmation
-            # from the user (of urllib2, in this case).  In practice,
+            # from the user (of urllib.request, in this case).  In practice,
             # essentially all clients do redirect in this case, so we
             # do the same.
             # be conciliant with URIs containing a space
@@ -126,7 +159,7 @@ class StreamingHTTPRedirectHandler(urllib2.HTTPRedirectHandler):
                              )
             return urllib2.Request(newurl,
                            headers=newheaders,
-                           origin_req_host=req.get_origin_req_host(),
+                           origin_req_host=origin_req_host(req),
                            unverifiable=True)
         else:
             raise urllib2.HTTPError(req.get_full_url(), code, msg, headers, fp)
@@ -146,8 +179,8 @@ class StreamingHTTPHandler(urllib2.HTTPHandler):
         if we're using an interable value"""
         # Make sure that if we're using an iterable object as the request
         # body, that we've also specified Content-Length
-        if req.has_data():
-            data = req.get_data()
+        if has_data(req):
+            data = get_data(req)
             if hasattr(data, 'read') or hasattr(data, 'next'):
                 if not req.has_header('Content-length'):
                     raise ValueError(
@@ -172,8 +205,8 @@ if hasattr(httplib, 'HTTPS'):
         def https_request(self, req):
             # Make sure that if we're using an iterable object as the request
             # body, that we've also specified Content-Length
-            if req.has_data():
-                data = req.get_data()
+            if has_data(req):
+                data = get_data(req)
                 if hasattr(data, 'read') or hasattr(data, 'next'):
                     if not req.has_header('Content-length'):
                         raise ValueError(
@@ -182,7 +215,7 @@ if hasattr(httplib, 'HTTPS'):
 
 
 def register_openers():
-    """Register the streaming http handlers in the global urllib2 default
+    """Register the streaming http handlers in the global urllib.request default
     opener object.
 
     Returns the created OpenerDirector object."""

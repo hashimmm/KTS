@@ -1,6 +1,6 @@
 import logging
 import difflib
-from urllib import urlencode
+from utils import urlencode
 import xml.etree.ElementTree as ET
 
 from flask import current_app
@@ -273,7 +273,7 @@ def parse_caption_language(capfile, capformat):
             langcode = "en"
             logger.info('no language found in xml, defaulting to English.')
         langcode = langcode.upper()
-        print langcode
+        print (langcode)
         try:
             language = KalturaLanguage.__dict__[langcode]
         except:
@@ -293,7 +293,7 @@ def GetConfig(settings):
         raise Exception("Settings not set in GetConfig")
     partner_id = int(settings.get('PARTNER_ID'))
     service_url = settings.get('SERVICE_URL')
-    print "-> GetConfig", partner_id, service_url
+    print ("-> GetConfig", partner_id, service_url)
     config = KalturaConfiguration(partner_id)
     config.serviceUrl = service_url
     config.setLogger(KalturaLogger())
@@ -308,7 +308,7 @@ def get_new_session_key(settings):
     admin_secret = settings.get('ADMIN_SECRET')
     user_name = settings.get('USER_NAME')
     client = KalturaClient(GetConfig(settings))
-    print "-> get_new_session_key", admin_secret, user_name, partner_id
+    print ("-> get_new_session_key", admin_secret, user_name, partner_id)
     return client.session.start(admin_secret,
                                 user_name,
                                 KalturaSessionType.ADMIN,
@@ -377,13 +377,13 @@ def uploadVideo(file_path,
                 media_description=None,
                 client=None,
                 media_type=None):
-    try:
-        # if True:
+    # try:
+    if True:
         # create session
         if client is None:
             raise Exception("Client can not be None")
         # add media
-        uploadTokenId = client.media.upload(file(file_path, 'rb'))
+        uploadTokenId = client.media.upload(open(file_path, 'rb'))
         # Add Media Entry anf
         mediaEntry = KalturaMediaEntry()
         mediaEntry.setName(media_name)
@@ -398,9 +398,9 @@ def uploadVideo(file_path,
         mediaEntry = client.media.addFromUploadedFile(
             mediaEntry, uploadTokenId)
         return (True, mediaEntry.id)
-    except Exception as e:
-        return (False,
-                "Unexpected error:" + "<p>" + str(e) + "</p>")
+    # except Exception as e:
+    #     return (False,
+    #             "Unexpected error:" + "<p>" + str(e) + "</p>")
 
 
 def updateThumbnail(file_path, entry_id, client=None, set_default=False):
@@ -604,7 +604,7 @@ def searchVideos(client,
     search = KalturaMediaEntryFilter()
     search.setOrderBy(KalturaMediaEntryOrderBy.CREATED_AT_ASC)
     # search.setMediaTypeEqual(KalturaMediaType.VIDEO)  # Video only
-    print "List videos, get the first one..."
+    print ("List videos, get the first one...")
     # Get 10 video entries, but we'll just use the first one returned
     entries = client.media.list(search, pager).objects
     entriesData = []

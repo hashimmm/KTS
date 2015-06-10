@@ -1,6 +1,7 @@
 from KalturaCoreClient import KalturaMediaType
 import magic  # python-magic library for mime type checking.
 import os
+import sys
 import urllib
 
 image_types = [
@@ -92,14 +93,19 @@ def get_KalturaMediaType_from_pull_url(purl, default):
     '''
     uo = urllib.urlopen(purl)
     try:
-        magic_type = magic.from_buffer(
-            uo.read(10240), mime=True).split('/')[0].upper()
+        if sys.version_info[0] > 2:
+            magic_type = magic.from_buffer(
+                uo.read(10240), mime=True).decode('utf-8')
+        else:
+            magic_type = magic.from_buffer(
+                uo.read(10240), mime=True)
+        magic_type = magic_type.split('/')[0].upper()
         uo.close()
     except:
-        print 'couldn\'t find type via magic, using ext...'
+        print ('couldn\'t find type via magic, using ext...')
         magic_type = check_type(os.path.splitext(purl)[1].lstrip('.'))
     if magic_type == 'APPLICATION':
-        print 'magic returned arbitrary type (application/x-octet-stream thingy), tryna use ext instead'
+        print ('magic returned arbitrary type (application/x-octet-stream thingy), tryna use ext instead')
         magic_type = check_type(os.path.splitext(purl)[1].lstrip('.'))
     if magic_type == 'VIDEO':
         return KalturaMediaType.VIDEO
@@ -108,20 +114,24 @@ def get_KalturaMediaType_from_pull_url(purl, default):
     elif magic_type == 'IMAGE':
         return KalturaMediaType.IMAGE
     elif default.lower() == 'video':
-        print 'failed to get type, using default.'
+        print ('failed to get type, using default.')
         return KalturaMediaType.VIDEO
     elif default.lower() == 'audio':
-        print 'failed to get type, using default.'
+        print ('failed to get type, using default.')
         return KalturaMediaType.AUDIO
     elif default.lower() == 'image':
-        print 'failed to get type, using default.'
+        print ('failed to get type, using default.')
         return KalturaMediaType.IMAGE
 
 
 def get_KalturaMediaType_from_file(path):
     ext = os.path.splitext(path)[1].lstrip('.')
     typename = check_type(ext)
-    magic_type = magic.from_file(path, mime=True).split('/')[0].upper()
+    if sys.version_info[0] > 2:
+        magic_type = magic.from_file(path, mime=True).decode('utf-8')
+    else:
+        magic_type = magic.from_file(path, mime=True)
+    magic_type = magic_type.split('/')[0].upper()
     if not typename:
         if magic_type == 'VIDEO':
             return KalturaMediaType.VIDEO

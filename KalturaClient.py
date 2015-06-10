@@ -4,16 +4,26 @@ from xml.parsers.expat import ExpatError
 from xml.dom import minidom
 from threading import Timer
 import socket
-import urllib
 import time
 import sys
 import os
 
 from poster.streaminghttp import register_openers
 from poster.encode import multipart_encode
-import urllib2
+try:
+    import urllib2
+except ImportError:
+    import urllib.request as urllib2
 
-# Register the streaming http handlers with urllib2
+if sys.version_info[0] > 2:
+    import urllib
+    urllib.urlopen = urllib2.urlopen
+else:
+    import urllib
+
+from utils import urlencode
+
+# Register the streaming http handlers with urllib.request
 register_openers()
 
 pluginsFolder = os.path.normpath(os.path.join(os.path.dirname(__file__), 'KalturaPlugins'))
@@ -112,13 +122,13 @@ class KalturaClient:
         self.callsQueue = []
         self.multiRequest = False
 
-        result = '%s&%s' % (url, urllib.urlencode(params.get()))
+        result = '%s&%s' % (url, urlencode(params.get()))
         self.log("Returned url [%s]" % result)
         return result        
         
     def queueServiceActionCall(self, service, action, params = KalturaParams(), files = KalturaFiles()):
         # in start session partner id is optional (default -1). if partner id was not set, use the one in the config
-        if not params.get().has_key("partnerId") or params.get()["partnerId"] == -1:
+        if not "partnerId" in params.get() or params.get()["partnerId"] == -1:
             params.put("partnerId", self.config.partnerId)
         params.addStringIfDefined("ks", self.ks)
         call = KalturaServiceActionCall(service, action, params, files)
@@ -161,9 +171,24 @@ class KalturaClient:
         if len(files.get()) == 0:
             try:
                 paramsdict = params.get()
-                paramsdict = {key.encode('utf-8'): paramsdict[key].encode('utf-8') for key in paramsdict}
-                f = urllib.urlopen(url, urllib.urlencode(paramsdict))
-            except Exception, e:
+                sanitized_params = {}
+                for k, v in paramsdict.items():
+                    if hasattr(k, 'encode'):
+                        key = k.encode('utf-8')
+                    elif hasattr(k, 'decode'):
+                        key = k.decode('utf-8').encode('utf-8')
+                    else:
+                        key = str(k).encode('utf-8')
+                    if hasattr(v, 'encode'):
+                        val = v.encode('utf-8')
+                    elif hasattr(k, 'decode'):
+                        val = v.decode('utf-8').encode('utf-8')
+                    else:
+                        val = str(v).encode('utf-8')
+                    sanitized_params[key] = val
+                f = urllib.urlopen(url, urlencode(sanitized_params))
+            #except Exception, e:
+            except Exception as e:
                 raise KalturaClientException(e, KalturaClientException.ERROR_CONNECTION_FAILED)
         else:
             fullParams = params
@@ -172,7 +197,7 @@ class KalturaClient:
             request = urllib2.Request(url, datagen, headers)
             try:
                 f = urllib2.urlopen(request)
-            except Exception, e:
+            except Exception as e:
                 raise KalturaClientException(e, KalturaClientException.ERROR_CONNECTION_FAILED)
         return f
 
@@ -184,9 +209,9 @@ class KalturaClient:
         try:
             try:
                 data = f.read()
-            except AttributeError, e:      # socket was closed while reading
+            except AttributeError as e:
                 raise KalturaClientException(e, KalturaClientException.ERROR_READ_TIMEOUT)
-            except Exception, e:
+            except Exception as e:
                 raise KalturaClientException(e, KalturaClientException.ERROR_READ_FAILED)
         finally:
             if requestTimeout != None:
@@ -219,7 +244,7 @@ class KalturaClient:
 
         try:        
             resultXml = minidom.parseString(postResult)
-        except ExpatError, e:
+        except ExpatError as e:
             raise KalturaClientException(e, KalturaClientException.ERROR_INVALID_XML)
             
         resultNode = getChildNodeByXPath(resultXml, 'xml/result')
