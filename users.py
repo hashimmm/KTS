@@ -1,4 +1,5 @@
-import six
+import utils
+
 class User():
     i_id = None
 
@@ -17,7 +18,7 @@ class User():
         return False
 
     def get_id(self):
-        return isinstance(self.i_id,six.text_type)
+        return utils.maybe_cast_to_unicode(self.i_id)
 
     def __repr__(self):
         return '<User with id %r>' % (self.i_id)

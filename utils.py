@@ -1,12 +1,28 @@
 import logging
-import six
 import shutil
 import os
+import sys
 from logging.handlers import RotatingFileHandler
 from functools import update_wrapper
 from datetime import timedelta
 import chardet
 from flask import make_response, request, current_app
+
+
+if sys.version_info[0] > 2:
+    base_string_type = str
+    rangegen = range
+    def maybe_cast_to_unicode(s):
+        return s
+    import urllib.parse
+    def urlencode(*args, **kwargs):
+        return urllib.parse.urlencode(*args, **kwargs).encode('utf8')
+else:
+    base_string_type = basestring
+    rangegen = xrange
+    def maybe_cast_to_unicode(s):
+        return unicode(s)
+    from urllib import urlencode
 
 
 def addFileLogger(logger_object, log_name, level=2):
@@ -44,9 +60,9 @@ def crossdomain(origin=None, methods=None, headers=None,
                 automatic_options=True):
     if methods is not None:
         methods = ', '.join(sorted(x.upper() for x in methods))
-    if headers is not None and not isinstance(headers, six.string_types):
+    if headers is not None and not isinstance(headers, base_string_type):
         headers = ', '.join(x.upper() for x in headers)
-    if not isinstance(origin, six.string_types):
+    if not isinstance(origin, base_string_type):
         origin = ', '.join(origin)
     if isinstance(max_age, timedelta):
         max_age = max_age.total_seconds()

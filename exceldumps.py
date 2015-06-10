@@ -1,5 +1,6 @@
-from xlsxwriter.workbook import Workbook
 import os
+from xlsxwriter.workbook import Workbook
+from utils import rangegen
 
 # def dump_dict_list(filename, data, order=None):
 #     if filename[0] == '/':
@@ -49,10 +50,10 @@ def get_new_worksheet(workbook):
 def write_to_worksheet(worksheet, data, order, startindex=0, skip_vals = {}):
     if not order is None:
         if startindex == 0:
-            for i in xrange(len(order)):
+            for i in rangegen(len(order)):
                 worksheet.write(0, i, order[i])
         moonwalk = 0
-        for i in xrange(len(data)):
+        for i in rangegen(len(data)):
             gandalf = 0
             for key in skip_vals:
                 for val in skip_vals[key]:
@@ -61,7 +62,7 @@ def write_to_worksheet(worksheet, data, order, startindex=0, skip_vals = {}):
             if gandalf:
                 moonwalk += 1
                 continue # thou shalt not pass
-            for j in xrange(len(order)):
+            for j in rangegen(len(order)):
                 current_col = order[j]
                 current_val = data[i].get(current_col, 'None')
                 worksheet.write(i - moonwalk + 1 + startindex,

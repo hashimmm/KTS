@@ -22,6 +22,11 @@ except ImportError:
         return sha.new(str(bits)).hexdigest()
 
 import urllib, re, os, mimetypes
+import sys
+if sys.version_info[0] > 2:
+    import urllib.parse
+    urllib.quote_plus = urllib.parse.quote_plus
+    unicode = str
 try:
     from email.header import Header
 except ImportError:
@@ -36,6 +41,8 @@ def encode_and_quote(data):
 
     if isinstance(data, unicode):
         data = data.encode("utf-8")
+    if sys.version_info[0] > 2:
+        return urllib.quote_plus(data).encode('utf8')
     return urllib.quote_plus(data)
 
 def _strify(s):
@@ -45,7 +52,19 @@ def _strify(s):
         return None
     if isinstance(s, unicode):
         return s.encode("utf-8")
+    if sys.version_info[0] > 2:
+        if type(s) == bytes:
+            return s
+        return str(s).encode('utf-8')
     return str(s)
+
+def _u(s):
+    """Opposite of the last function."""
+    if s is None:
+        return None
+    if hasattr(s, 'decode'):
+        return s.decode('utf-8')
+    return unicode(s)
 
 class MultipartParam(object):
     """Represents a single parameter in a multipart/form-data request
@@ -89,10 +108,21 @@ class MultipartParam(object):
             if isinstance(filename, unicode):
                 # Encode with XML entities
                 self.filename = filename.encode("ascii", "xmlcharrefreplace")
+                if sys.version_info[0] > 2:
+                    self.filename = self.filename.decode("ascii")
             else:
-                self.filename = str(filename)
-            self.filename = self.filename.encode("string_escape").\
-                    replace('"', '\\"')
+                if sys.version_info[0] < 3:
+                    self.filename = str(filename)
+                else:
+                    self.filename = self.filename.decode("ascii")
+            escaping_method = "string_escape" if sys.version_info[0] < 3 \
+                else "unicode_escape"
+            if sys.version_info[0] > 2:
+                self.filename = self.filename.replace('"', '\\"')\
+                    .encode(escaping_method)
+            else:
+                self.filename = self.filename.encode(escaping_method).\
+                        replace('"', '\\"')
         self.filetype = _strify(filetype)
 
         self.filesize = filesize
@@ -183,11 +213,11 @@ class MultipartParam(object):
         """Returns the header of the encoding of this parameter"""
         boundary = encode_and_quote(boundary)
 
-        headers = ["--%s" % boundary]
+        headers = ["--%s" % _u(boundary)]
 
         if self.filename:
             disposition = 'form-data; name="%s"; filename="%s"' % (self.name,
-                    self.filename)
+                    _u(self.filename))
         else:
             disposition = 'form-data; name="%s"' % self.name
 
@@ -198,7 +228,7 @@ class MultipartParam(object):
         else:
             filetype = "text/plain; charset=utf-8"
 
-        headers.append("Content-Type: %s" % filetype)
+        headers.append("Content-Type: %s" % _u(filetype))
 
         headers.append("")
         headers.append("")
@@ -211,11 +241,13 @@ class MultipartParam(object):
             value = self.fileobj.read()
         else:
             value = self.value
-
+        if sys.version_info[0] > 2 and hasattr(value, 'decode'):
+            value = value.decode('utf8')
         if re.search("^--%s$" % re.escape(boundary), value, re.M):
             raise ValueError("boundary found in encoded string")
-
-        return "%s%s\r\n" % (self.encode_hdr(boundary), value)
+        encoded = _strify(self.encode_hdr(boundary)) + _strify(value) + \
+            _strify("\r\n")
+        return encoded
 
     def iter_encode(self, boundary, blocksize=4096):
         """Yields the encoding of this parameter
@@ -235,15 +267,16 @@ class MultipartParam(object):
             yield block
             if self.cb:
                 self.cb(self, current, total)
-            last_block = ""
-            encoded_boundary = "--%s" % encode_and_quote(boundary)
-            boundary_exp = re.compile("^%s$" % re.escape(encoded_boundary),
-                    re.M)
+            last_block = _strify("")
+            encoded_boundary = _strify("--") + encode_and_quote(boundary)
+            boundary_exp = re.compile(_strify("^") + re.escape(encoded_boundary)
+                                        + _strify("$"),
+                                      re.M)
             while True:
                 block = self.fileobj.read(blocksize)
                 if not block:
                     current += 2
-                    yield "\r\n"
+                    yield _strify("\r\n")
                     if self.cb:
                         self.cb(self, current, total)
                     break
@@ -326,12 +359,15 @@ class multipart_yielder:
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         """generator function to yield multipart/form-data representation
         of parameters"""
         if self.param_iter is not None:
             try:
-                block = self.param_iter.next()
+                if sys.version_info[0] < 3:
+                    block = self.param_iter.next()
+                else:
+                    block = self.param_iter.__next__()
                 self.current += len(block)
                 if self.cb:
                     self.cb(self.p, self.current, self.total)
@@ -346,7 +382,7 @@ class multipart_yielder:
             self.param_iter = None
             self.p = None
             self.i = None
-            block = "--%s--\r\n" % self.boundary
+            block = _strify("--") + _strify(self.boundary) + _strify("--\r\n")
             self.current += len(block)
             if self.cb:
                 self.cb(self.p, self.current, self.total)
@@ -355,7 +391,10 @@ class multipart_yielder:
         self.p = self.params[self.i]
         self.param_iter = self.p.iter_encode(self.boundary)
         self.i += 1
-        return self.next()
+        if sys.version_info[0] < 3:
+            return self.next()
+        return self.__next__()
+    next = __next__
 
     def reset(self):
         self.i = 0

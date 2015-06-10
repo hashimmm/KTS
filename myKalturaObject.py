@@ -1,6 +1,6 @@
 import logging
 import difflib
-from urllib.parse import urlencode
+from utils import urlencode
 import xml.etree.ElementTree as ET
 
 from flask import current_app
@@ -377,13 +377,13 @@ def uploadVideo(file_path,
                 media_description=None,
                 client=None,
                 media_type=None):
-    try:
-        # if True:
+    # try:
+    if True:
         # create session
         if client is None:
             raise Exception("Client can not be None")
         # add media
-        uploadTokenId = client.media.upload(file(file_path, 'rb'))
+        uploadTokenId = client.media.upload(open(file_path, 'rb'))
         # Add Media Entry anf
         mediaEntry = KalturaMediaEntry()
         mediaEntry.setName(media_name)
@@ -398,9 +398,9 @@ def uploadVideo(file_path,
         mediaEntry = client.media.addFromUploadedFile(
             mediaEntry, uploadTokenId)
         return (True, mediaEntry.id)
-    except Exception as e:
-        return (False,
-                "Unexpected error:" + "<p>" + str(e) + "</p>")
+    # except Exception as e:
+    #     return (False,
+    #             "Unexpected error:" + "<p>" + str(e) + "</p>")
 
 
 def updateThumbnail(file_path, entry_id, client=None, set_default=False):

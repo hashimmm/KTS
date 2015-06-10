@@ -1,4 +1,6 @@
+import sys
 import hashlib
+from utils import rangegen, maybe_cast_to_unicode
 
 # Service response formats
 KALTURA_SERVICE_FORMAT_JSON = 1
@@ -61,7 +63,7 @@ class KalturaParams:
         if value == None:
             self.params[key + '__null'] = ''
         else:
-            self.params[key] = unicode(value)
+            self.params[key] = maybe_cast_to_unicode(value)
 
     def update(self, props):
         self.params.update(props.get())
@@ -87,7 +89,7 @@ class KalturaParams:
         if len(array) == 0:
             self.put('%s:-' % key, '')
         else:
-            for curIndex in xrange(len(array)):
+            for curIndex in rangegen(len(array)):
                 self.addObjectIfDefined('%s:%s' % (key, curIndex), array[curIndex])
 
     def addStringIfDefined(self, key, value):
@@ -136,7 +138,7 @@ class KalturaParams:
             self.put(key, '0')
 
     def signature(self):
-        params = self.params.items()
+        params = list(self.params.items())
         params.sort()
         str = ""
         for (k, v) in params:
@@ -147,7 +149,11 @@ class KalturaParams:
     def md5(str):
         m = hashlib.md5()
         m.update(str)
-        return m.digest().encode('hex')
+        if sys.version_info[0] > 2:  # probably only > (3, 3)?
+            import codecs
+            return codecs.encode(m.digest(), 'hex_codec')
+        else:
+            return m.digest().encode('hex')
 
 # Request files container
 class KalturaFiles:
@@ -171,7 +177,7 @@ class KalturaObjectBase:
     def fromXmlImpl(self, node, propList):
         for childNode in node.childNodes:
             nodeName = childNode.nodeName
-            if not propList.has_key(nodeName):
+            if not nodeName in propList:
                 continue
             propLoader = propList[nodeName]
             if type(propLoader) == tuple:
@@ -275,7 +281,7 @@ class KalturaEnumsFactory:
 
     @staticmethod
     def create(enumValue, enumType):
-        if not KalturaEnumsFactory.enumFactories.has_key(enumType):
+        if not enumType in KalturaEnumsFactory.enumFactories:
             raise KalturaClientException("Unrecognized enum '%s'" % enumType, KalturaClientException.ERROR_INVALID_OBJECT_TYPE)
         return KalturaEnumsFactory.enumFactories[enumType](enumValue)
 
@@ -307,7 +313,7 @@ class KalturaObjectFactory:
         if objTypeNode == None:
             return None
         objType = getXmlNodeText(objTypeNode)
-        if not KalturaObjectFactory.objectFactories.has_key(objType):
+        if not objType in KalturaObjectFactory.objectFactories:
             raise KalturaClientException("Unrecognized object '%s'" % objType, KalturaClientException.ERROR_INVALID_OBJECT_TYPE)
         result = KalturaObjectFactory.objectFactories[objType]()
         if not isinstance(result, expectedType):

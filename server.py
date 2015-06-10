@@ -169,7 +169,7 @@ def add_config():
 @login_required
 def submit_add_config():
     values = [request.args.get(properties.kaltura_properties_list[j]) for \
-              j in xrange(1, len(properties.kaltura_properties_list))]
+              j in utils.rangegen(1, len(properties.kaltura_properties_list))]
     resp = simplejson.loads(properties.add_kaltura(values))
     if resp.get('success', False) == True:
         message = 'Added'
@@ -252,8 +252,9 @@ def view_configs_prettyjson():
 @login_required
 def view_configs():
     props = properties.load_kaltura_settings()
-    columns = ['id'] + props[props.keys()[0]].keys()
-    data = [[key] + props[key].values() for key in sorted(props.keys())]
+    columns = ['id'] + list(props[list(props.keys())[0]].keys())
+    data = [[key] + list(props[key].values())
+            for key in sorted(list(props.keys()))]
     return render_template('kaltura_configs.html',
                            columns=columns,
                            data=data)
@@ -307,7 +308,7 @@ def get_excel():
     worksheet = get_new_worksheet(workbook)
     i = total / pagesize + (1 if total % pagesize else 0)
     skipped = 0
-    for num in xrange(i):
+    for num in utils.rangegen(i):
         data = myKalturaObject.searchVideos(
             client, kaltura_id, True, int(pagesize), num + 1)
         write_result = write_to_worksheet(worksheet,
@@ -915,28 +916,28 @@ def update_caption_details():
 if not SETTINGS['DEBUG_MODE']:
     @app.errorhandler(myKalturaObject.KalturaException)
     def handle_kaltura_server_error(error):
-        app.logger.exception(str(error.message))
+        app.logger.exception(str(error))
         error_dict = {
             "success": False,
-            "messages": [str(error.message)] + g.get('msgs', [])
+            "messages": [str(error)] + g.get('msgs', [])
         }
         return simplejson.dumps(error_dict), 500
 
     @app.errorhandler(myKalturaObject.KalturaClientException)
     def handle_kaltura_client_error(error):
-        app.logger.exception(str(error.message))
+        app.logger.exception(str(error))
         error_dict = {
             "success": False,
-            "messages": [str(error.message)] + g.get('msgs', [])
+            "messages": [str(error)] + g.get('msgs', [])
         }
         return simplejson.dumps(error_dict), 500
 
     @app.errorhandler(Exception)
     def handle_other_errors(error):
-        app.logger.exception(error.message)
+        app.logger.exception(str(error))
         error_dict = {
             "success": False,
-            "messages": [error.message] + g.get('msgs', [])
+            "messages": [str(error)] + g.get('msgs', [])
         }
         return simplejson.dumps(error_dict), 500
 
