@@ -350,7 +350,6 @@ def pullVideo(pull_path,
               client=None,
               media_type=None):
     try:
-        # if True:
         # create session
         if client is None:
             raise Exception("Client can not be None")
@@ -377,8 +376,7 @@ def uploadVideo(file_path,
                 media_description=None,
                 client=None,
                 media_type=None):
-    # try:
-    if True:
+    try:
         # create session
         if client is None:
             raise Exception("Client can not be None")
@@ -398,9 +396,9 @@ def uploadVideo(file_path,
         mediaEntry = client.media.addFromUploadedFile(
             mediaEntry, uploadTokenId)
         return (True, mediaEntry.id)
-    # except Exception as e:
-    #     return (False,
-    #             "Unexpected error:" + "<p>" + str(e) + "</p>")
+    except Exception as e:
+        return (False,
+                "Unexpected error:" + "<p>" + str(e) + "</p>")
 
 
 def updateThumbnail(file_path, entry_id, client=None, set_default=False):
@@ -468,7 +466,6 @@ def thumbnail_delete(client, thumbnail_id):
 
 def thumbnail_list(client, entry_id, in_dict=True):
     try:
-        # if True:
         thumb_asset_service = KalturaThumbAssetService(client)
         kfilter = KalturaAssetFilter()
         kfilter.entryIdEqual = entry_id
@@ -923,12 +920,11 @@ def update_caption(caption_id, language, capformat, name, default, client):
     msgs = []
     caption_asset = KalturaCaptionAsset()
     if language:
-        if True:
-            # try:
+        try:
             caption_asset.setLanguage(KalturaLanguage(language.capitalize()))
             msgs.append('language is ' + language)
-            # except:
-            #   msgs.append('unable to set language. ')
+        except:
+            msgs.append('unable to set language. ')
     if capformat:
         if capformat.lower() == 'srt':
             capformat = KalturaCaptionType.SRT
@@ -946,11 +942,10 @@ def update_caption(caption_id, language, capformat, name, default, client):
         msgs.append('default is true')
         caption_asset.setIsDefault(
             KalturaNullableBoolean(KalturaNullableBoolean.TRUE_VALUE))
-    if True:
-        # try:
+    try:
         caption_asset_service.update(caption_id, caption_asset)
-        # except Exception as e:
-        # return {'success':False, 'messages':str(e)}
+    except Exception as e:
+        return {'success':False, 'messages':str(e)}
     return {'success': True, 'messages': msgs}
 
 
